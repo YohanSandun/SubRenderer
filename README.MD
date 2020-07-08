@@ -24,14 +24,12 @@ SubRenderer v1.0.0
 **SpecialThanks**
 
 	MKVToolNix
-		- License: GNU Lesser General Public License v3 (see `doc/licenses/LGPL-3.0.txt`)
+		- License: GNU Lesser General Public License v3 (see https://www.gnu.org/licenses/lgpl-3.0.txt)
 		- URL: https://techbase.kde.org/Projects/Oxygen
 
 	Son2VSub
-		* Alain Vielle (vielle@bigfoot.com)
-		* Petr Vyskocil (yusaku@anime.cz)
-		- License: GNU Lesser General Public License v3 (see `doc/licenses/LGPL-3.0.txt`)
-		- URL: https://techbase.kde.org/Projects/Oxygen
+		- Alain Vielle (vielle@bigfoot.com)
+		- Petr Vyskocil (yusaku@anime.cz)
 
-** License: GNU Lesser General Public License v3 (see `doc/licenses/LGPL-3.0.txt`)
-** URL: https://techbase.kde.org/Projects/Oxygen
+License: GNU General Public License v3 (see `COPYING.txt` or https://www.gnu.org/licenses/gpl-3.0.txt)
+URL: https://github.com/yohan9911/SubRenderer
