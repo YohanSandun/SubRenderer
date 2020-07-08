@@ -16,10 +16,11 @@ SubRenderer v1.0.0
 **Installation**
 
 	If you want to compile the software yourself, You can just download
-	the official repo from GitHub and compile it using Visual studio 2012
+	the official repo (https://github.com/yohan9911/SubRenderer) from GitHub and compile it using Visual studio 2012
 	or later version.
 
 	Otherwise you can just download official release from this link
+	https://github.com/yohan9911/SubRenderer/releases
 
 **SpecialThanks**
 
