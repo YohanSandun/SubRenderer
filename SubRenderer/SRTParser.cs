@@ -20,7 +20,6 @@
 //---------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 //---------------------------------------------------------------------------
@@ -50,55 +49,28 @@ namespace SubRenderer
     }
 
     public class SRTSegment {
-        string mNumber;
-        string mStart;
-        string mEnd;
-        string[] mTextLines;
-        bool mItalic, mUnderline;
+        public bool IsItalic { get; set; }
 
-        public bool IsItalic {
-            get { return mItalic; }
-            set { mItalic = value; }
-        }
+        public bool IsUnderline { get; set; }
 
-        public bool IsUnderline {
-            get { return mUnderline; }
-            set { mUnderline = value; }
-        }
+        public string Number { get; set; }
 
-        public string Number {
-            get { return mNumber; }
-            set { mNumber = value; }
-        }
+        public string StartTime { get; set; }
 
-        public string StartTime
-        {
-            get { return mStart; }
-            set { mStart = value; }
-        }
+        public string EndTime { get; set; }
 
-        public string EndTime
-        {
-            get { return mEnd; }
-            set { mEnd = value; }
-        }
-
-        public string[] TextLines
-        {
-            get { return mTextLines; }
-            set { mTextLines = value; }
-        }
+        public string[] TextLines { get; set; }
 
         public string GetStartTime()
         {
-            string[] nums = mStart.Trim().Split(',');
+            string[] nums = StartTime.Trim().Split(',');
             int i = (int.Parse(nums[1]) * 24) / 1000;
             return nums[0] + ":" + (i < 10 ? "0" + i : i + "");
         }
 
         public string GetEndTime()
         {
-            string[] nums = mEnd.Trim().Split(',');
+            string[] nums = EndTime.Trim().Split(',');
             int i = (int.Parse(nums[1]) * 24) / 1000;
             return nums[0] + ":" + (i < 10 ? "0" + i : i + "");
         }

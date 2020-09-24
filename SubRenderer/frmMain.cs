@@ -21,12 +21,8 @@
 //
 //---------------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Drawing.Imaging;
@@ -60,7 +56,7 @@ namespace SubRenderer
         void pBorderCol_MouseClick(object sender, MouseEventArgs e)
         {
             dlgColor.Color = mBorderColor;
-            if (dlgColor.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (dlgColor.ShowDialog() == DialogResult.OK)
             {
                 mBorderColor = dlgColor.Color;
                 pBorderCol.BackColor = mBorderColor;
@@ -71,7 +67,7 @@ namespace SubRenderer
         void pFontCol_MouseClick(object sender, MouseEventArgs e)
         {
             dlgColor.Color = mFontColor;
-            if (dlgColor.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+            if (dlgColor.ShowDialog() == DialogResult.OK) {
                 mFontColor = dlgColor.Color;
                 pFontCol.BackColor = mFontColor;
                 RefreshPreview();

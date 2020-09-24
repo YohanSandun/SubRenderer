@@ -72,7 +72,9 @@ namespace SubRenderer
             this.lblFont = new System.Windows.Forms.Label();
             this.scrPos = new System.Windows.Forms.VScrollBar();
             this.pPreview = new System.Windows.Forms.Panel();
+            this.txtHeight = new SubRenderer.IntegerTextBox();
             this.lblHeight = new System.Windows.Forms.Label();
+            this.txtWidth = new SubRenderer.IntegerTextBox();
             this.lblWidth = new System.Windows.Forms.Label();
             this.cmbRes = new System.Windows.Forms.ComboBox();
             this.lblRes = new System.Windows.Forms.Label();
@@ -100,8 +102,6 @@ namespace SubRenderer
             this.mnuExit = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuAbout = new System.Windows.Forms.ToolStripMenuItem();
-            this.txtHeight = new SubRenderer.IntegerTextBox();
-            this.txtWidth = new SubRenderer.IntegerTextBox();
             this.grpInputFiles.SuspendLayout();
             this.grpMain.SuspendLayout();
             this.grpOutput.SuspendLayout();
@@ -341,6 +341,16 @@ namespace SubRenderer
             this.pPreview.TabIndex = 13;
             this.pPreview.Paint += new System.Windows.Forms.PaintEventHandler(this.pPreview_Paint);
             // 
+            // txtHeight
+            // 
+            this.txtHeight.Location = new System.Drawing.Point(297, 32);
+            this.txtHeight.Name = "txtHeight";
+            this.txtHeight.Size = new System.Drawing.Size(69, 20);
+            this.txtHeight.TabIndex = 5;
+            this.txtHeight.Text = "0";
+            this.txtHeight.Value = 0;
+            this.txtHeight.TextChanged += new System.EventHandler(this.txtHeight_TextChanged);
+            // 
             // lblHeight
             // 
             this.lblHeight.AutoSize = true;
@@ -349,6 +359,16 @@ namespace SubRenderer
             this.lblHeight.Size = new System.Drawing.Size(41, 13);
             this.lblHeight.TabIndex = 4;
             this.lblHeight.Text = "Height:";
+            // 
+            // txtWidth
+            // 
+            this.txtWidth.Location = new System.Drawing.Point(196, 33);
+            this.txtWidth.Name = "txtWidth";
+            this.txtWidth.Size = new System.Drawing.Size(69, 20);
+            this.txtWidth.TabIndex = 3;
+            this.txtWidth.Text = "0";
+            this.txtWidth.Value = 0;
+            this.txtWidth.TextChanged += new System.EventHandler(this.txtWidth_TextChanged);
             // 
             // lblWidth
             // 
@@ -450,7 +470,7 @@ namespace SubRenderer
             // 
             // dlgVideo
             // 
-            this.dlgVideo.Filter = "Matroska (*.mkv)|*.mkv;*.mp4";
+            this.dlgVideo.Filter = "Matroska (*.mkv,*.mp4)|*.mkv;*.mp4";
             // 
             // progressBar
             // 
@@ -569,26 +589,6 @@ namespace SubRenderer
             this.mnuAbout.Size = new System.Drawing.Size(126, 22);
             this.mnuAbout.Text = "About";
             this.mnuAbout.Click += new System.EventHandler(this.mnuAbout_Click);
-            // 
-            // txtHeight
-            // 
-            this.txtHeight.Location = new System.Drawing.Point(297, 32);
-            this.txtHeight.Name = "txtHeight";
-            this.txtHeight.Size = new System.Drawing.Size(69, 20);
-            this.txtHeight.TabIndex = 5;
-            this.txtHeight.Text = "0";
-            this.txtHeight.Value = 0;
-            this.txtHeight.TextChanged += new System.EventHandler(this.txtHeight_TextChanged);
-            // 
-            // txtWidth
-            // 
-            this.txtWidth.Location = new System.Drawing.Point(196, 33);
-            this.txtWidth.Name = "txtWidth";
-            this.txtWidth.Size = new System.Drawing.Size(69, 20);
-            this.txtWidth.TabIndex = 3;
-            this.txtWidth.Text = "0";
-            this.txtWidth.Value = 0;
-            this.txtWidth.TextChanged += new System.EventHandler(this.txtWidth_TextChanged);
             // 
             // frmMain
             // 
