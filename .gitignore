@@ -1,4 +1,5 @@
-#bin dir
+#bin and obj dir
+obj/
 bin/
 
 #temporary files
