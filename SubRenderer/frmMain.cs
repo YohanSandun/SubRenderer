@@ -599,7 +599,7 @@ namespace SubRenderer
         // Dump a bitmap in a VobSub v7 file.
         // The VobSub v7 sub file is really a stripped VOB containing
         // only the subtitle related blocks, so we have to emulate the
-        // MPEG2 packet structure and the Subpicture format (yuk!!!).
+        // MPEG2 packet structure and the Subpicture format.
         long DumpSub(Bitmap bmp, long width, long height, long x1, long y1, long timestart, long timelength, byte col1, byte col2, byte cont1, byte cont2, BinaryWriter bw)
         {
             long i, n, y;
@@ -893,7 +893,10 @@ namespace SubRenderer
 
         void mMkvMerge_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            //TODO
+            Invoke(new Action(() => {
+                MessageBox.Show("Error while merging the mkv file!\n" + e.Data, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                Environment.Exit(1);
+            }));
         }
 
         // Get the current progress from the mkvmerge.

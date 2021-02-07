@@ -1,0 +1,6 @@
+#bin dir
+bin/
+
+#temporary files
+*.obj
+*.exe

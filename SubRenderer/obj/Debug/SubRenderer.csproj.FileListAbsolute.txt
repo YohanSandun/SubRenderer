@@ -9,3 +9,13 @@ C:\Users\Yohan PC\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.csp
 C:\Users\Yohan PC\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.csproj.CoreCompileInputs.cache
 C:\Users\Yohan PC\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.exe
 C:\Users\Yohan PC\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.pdb
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\bin\Debug\SubRenderer.exe.config
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\bin\Debug\SubRenderer.exe
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\bin\Debug\SubRenderer.pdb
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.frmAbout.resources
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.frmMain.resources
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.Properties.Resources.resources
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.csproj.GenerateResource.cache
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.csproj.CoreCompileInputs.cache
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.exe
+C:\Users\Acer\Source\Repos\SubRenderer\SubRenderer\obj\Debug\SubRenderer.pdb
