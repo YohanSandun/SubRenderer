@@ -36,7 +36,7 @@ namespace SubRenderer
         string mSubtitleFilePath = "";
         string mVideoFile        = "";
         string mVideoFilePath    = "";
-        string mWorkingDir       = ""; // A directory for store bitmaps.
+        string mWorkingDir       = ""; // A directory for storing bitmaps.
         string mSaveDir          = "";
 
         Color mFontColor = Color.White;
