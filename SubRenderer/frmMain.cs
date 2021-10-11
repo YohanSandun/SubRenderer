@@ -346,7 +346,7 @@ namespace SubRenderer
             grpInputFiles.Enabled = false;
             grpOutput.Enabled = false;
             grpMain.Enabled = false;
-            GenerateBitmaps();
+            //GenerateBitmaps();
             GenerateSubFile();
             MergeMKV();
         }
@@ -384,7 +384,7 @@ namespace SubRenderer
                     }
                 }
                 sw.WriteLine(segments[i].Number + "	" + segments[i].GetStartTime() + "	" + segments[i].GetEndTime() + "	" + segments[i].Number + ".bmp");
-                GenerateBitmap(segments[i].Number, segments[i].TextLines, segments[i].IsItalic, segments[i].IsUnderline);
+                GenerateBitmap(segments[i].TextLines);
                 progressBar.Value++;
                 Application.DoEvents();
             }
@@ -393,54 +393,51 @@ namespace SubRenderer
         }
 
         // Create a bitmap file with given text.
-        void GenerateBitmap(string id, string[] lines, bool isItalic, bool isUnderline)
+        private Font fontText;
+        Bitmap GenerateBitmap(string[] lines)
         {
-            FontStyle fontStyle = FontStyle.Bold;
-            if (isItalic) fontStyle = FontStyle.Italic;
-            if (isUnderline) fontStyle = FontStyle.Underline;
-
-            Font fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), fontStyle);
             int lineHeight = (int)(fontText.Size + (fontText.Size * 9 / 40));
             
             Bitmap bmp = new Bitmap(txtWidth.Value, (lines.Length * lineHeight) + 25);
             Graphics g = Graphics.FromImage(bmp);
             g.Clear(Color.Red);
 
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.InterpolationMode = InterpolationMode.High;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+
+            StringFormat stringFormat = new StringFormat();
+            stringFormat.Alignment = StringAlignment.Center;
 
             for (int i = 0; i < lines.Length; i++)
             {
-                // Following four lines are drawing out-line of the text.
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //// Following four lines are drawing out-line of the text.
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
 
-                // Drawing the actual text.
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value, i * lineHeight), Color.Black, TextFormatFlags.HorizontalCenter);
+                //// Drawing the actual text.
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value, i * lineHeight), Color.Black, TextFormatFlags.HorizontalCenter);
+
+                GraphicsPath p = new GraphicsPath();
+                p.AddString(
+                    lines[i],          
+                    fontText.FontFamily,  
+                    (int)FontStyle.Bold,     
+                    g.DpiY * fontText.Size / 72,  
+                    new Point(txtWidth.Value/2, i * lineHeight),          
+                    stringFormat);          
+                Pen pen = new Pen(Brushes.Blue);
+                pen.Width = 15;
+                g.DrawPath(pen, p);
+                g.FillPath(Brushes.Black, p);
             }
 
             g.Flush();
             g.Save();
-            fontText.Dispose();
 
-            // Following section is looping though all the pixels of drawn bitmap
-            // and making darken blue pixels as pure blue pixels.
-            Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            BitmapData data = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte[] rgbs = new byte[Math.Abs(data.Stride) * bmp.Height];
-            System.Runtime.InteropServices.Marshal.Copy((IntPtr)data.Scan0, rgbs, 0, rgbs.Length);
-            for (int i = 0; i < rgbs.Length; i += 4)
-            {
-                if (rgbs[i] >= 10)
-                    rgbs[i] = 255;
-            }
-            System.Runtime.InteropServices.Marshal.Copy(rgbs, 0, (IntPtr)data.Scan0, rgbs.Length);
-            bmp.UnlockBits(data);
-            bmp.Save(mWorkingDir + id + ".bmp", ImageFormat.Png); // Actually we are using png because it's small in size.
-            bmp.Dispose();
+            return bmp;
         }
 
         long fileOffset = 0; // For tracking current offset of the .sub file.
@@ -456,17 +453,14 @@ namespace SubRenderer
             float fps = float.Parse(cmbFps.SelectedItem.ToString());
             int x = 0;
             int y = 0;
-            int[] palette = new int[16];
-            char[] fileline = new char[4096];
             byte cont1 = 0;
             byte cont2 = 0;
             byte col1 = 0;
             byte col2 = 0;
-            int c1, c2, c3, c4, c5, c6, c7, c8, c9;
-            c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 0;
-            string fileName = "";
 
-            string[] sonLines = File.ReadAllLines(mWorkingDir + "subrenderer.son");
+            fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), FontStyle.Bold);
+
+            SRTSegment[] segments = SRTParser.Parse(mSubtitleFile);
 
             // Creating .sub file and start writing into it.
             BinaryWriter bw = new BinaryWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".sub"));
@@ -488,71 +482,34 @@ namespace SubRenderer
             sw.WriteLine("langidx: 0");
             sw.WriteLine("id: --, index: 0");
 
-            progressBar.Maximum = sonLines.Length;
+            progressBar.Maximum = segments.Length;
             progressBar.Value = 0;
 
-            foreach (string l in sonLines)
+            cont1 = 16 * 15 + 15;
+            cont2 = 15;
+
+            col1 = 2;
+            col2 = 0;
+
+            x = 0;
+            y = txtHeight.Value;
+
+            for (int i = 0; i < segments.Length; i++)
             {
-                string line = l.Trim();
-                c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 0;
-                if (line.StartsWith("Contrast"))
-                {
-                    string[] data = line.Replace("Contrast", "").Replace("(", "").Replace(")", "").Trim().Split(' ');
-                    c1 = int.Parse(data[0]);
-                    c2 = int.Parse(data[1]);
-                    c3 = int.Parse(data[2]);
-                    c4 = int.Parse(data[3]);
-                    cont1 = (byte)(16 * c4 + c3);
-                    cont2 = (byte)(16 * c1 + c2);
-                }
-                else if (line.StartsWith("Display_Area"))
-                {
-                    string[] data = line.Replace("Display_Area", "").Replace("(", "").Replace(")", "").Trim().Split(' ');
-                    x = int.Parse(data[0]);
-                    y = int.Parse(data[1]);
-                    c3 = int.Parse(data[2]);
-                    c4 = int.Parse(data[3]);
-                }
-                else if (line.StartsWith("Color"))
-                {
-                    string[] data = line.Replace("Color", "").Replace("(", "").Replace(")", "").Trim().Split(' ');
-                    c1 = int.Parse(data[0]);
-                    c2 = int.Parse(data[1]);
-                    c3 = int.Parse(data[2]);
-                    c4 = int.Parse(data[3]);
-                    col1 = (byte)(16 * c4 + c3);
-                    col2 = (byte)(16 * c1 + c2);
-                }
-                else if (line.Trim().EndsWith(".bmp"))
-                {
-                    string[] data = line.Trim().Split('	');
-                    c1 = int.Parse(data[0]);
+                int[] startTime = segments[i].GetStartTimeArray();
+                int[] endTime = segments[i].GetEndTimeArray();
 
-                    string[] startTime = data[1].Trim().Split(':');
-                    c2 = int.Parse(startTime[0]);
-                    c3 = int.Parse(startTime[1]);
-                    c4 = int.Parse(startTime[2]);
-                    c5 = int.Parse(startTime[3]);
+                timefrom = (long)((startTime[0] * 3600000) + (startTime[1] * 60000) + (startTime[2] * 1000) + (1.0f * startTime[3] * 1000 / fps));
+                timeto = (long)((endTime[0] * 3600000) + (endTime[1] * 60000) + (endTime[2] * 1000) + (1.0f * endTime[3] * 1000 / fps));
+                
+                sw.WriteLine("timestamp: " + GetNumberString((timefrom) / 3600000, 2) + ":" + GetNumberString(((timefrom) / 60000) % 60, 2) + ":" + GetNumberString(((timefrom) / 1000) % 60, 2) + ":" + GetNumberString((timefrom) % 1000, 3) + ", filepos: " + GetHexNumberString(offset, 9));
 
-                    string[] endTime = data[2].Trim().Split(':');
-                    c6 = int.Parse(endTime[0]);
-                    c7 = int.Parse(endTime[1]);
-                    c8 = int.Parse(endTime[2]);
-                    c9 = int.Parse(endTime[3]);
+                Bitmap bmp = GenerateBitmap(segments[i].TextLines);
 
-                    fileName = mWorkingDir + data[3].Trim();
+                // Time used here is in 1/90000th second
+                offset += DumpSub(bmp, width, height, x, y, timefrom * 90, (timeto - timefrom) * 90, col1, col2, cont1, cont2, bw);
+                bmp.Dispose();
 
-                    timefrom = (long)((c2 * 3600000) + (c3 * 60000) + (c4 * 1000) + (1.0f * c5 * 1000 / fps));
-                    timeto = (long)((c6 * 3600000) + (c7 * 60000) + (c8 * 1000) + (1.0f * c9 * 1000 / fps));
-                    
-                    sw.WriteLine("timestamp: " + GetNumberString((timefrom) / 3600000, 2) + ":" + GetNumberString(((timefrom) / 60000) % 60, 2) + ":" + GetNumberString(((timefrom) / 1000) % 60, 2) + ":" + GetNumberString((timefrom) % 1000, 3) + ", filepos: " + GetHexNumberString(offset, 9));
-
-                    Bitmap bmp = new Bitmap(fileName);
-
-                    // Time used here is in 1/90000th second
-                    offset += DumpSub(bmp, width, height, x, y, timefrom * 90, (timeto - timefrom) * 90, col1, col2, cont1, cont2, bw);
-                    bmp.Dispose();
-                }
                 progressBar.Value++;
                 Application.DoEvents();
             }
@@ -562,15 +519,7 @@ namespace SubRenderer
             sw.Flush();
             sw.Close();
 
-            // Removing created temp files and bitmaps.
-            try
-            {
-                DirectoryInfo dInfo = new DirectoryInfo(mWorkingDir);
-                foreach (FileInfo file in dInfo.GetFiles())
-                    file.Delete();
-                dInfo.Delete(true);
-            }
-            catch { }
+            fontText.Dispose();
         }
 
         // Returns a horizontal pixel line from given bitmap. 
@@ -636,32 +585,32 @@ namespace SubRenderer
 
             // Control Header (DCSQT)
             // 1st Display Control Sequence (DCSQ)
-            spu[offset + 0] = (byte)0x00;			// Start Time in (1024/90000)th sec (byte 1)
-            spu[offset + 1] = (byte)0x00;			// Start Time in (1024/90000)th sec (byte 2)
+            spu[offset + 0] = 0x00;			// Start Time in (1024/90000)th sec (byte 1)
+            spu[offset + 1] = 0x00;			// Start Time in (1024/90000)th sec (byte 2)
             n = offset + 24;
             spu[offset + 2] = (byte)(n / 0x100);	// Offset to next DCSQ (byte 1)
             spu[offset + 3] = (byte)(n % 0x100);	// Offset to next DCSQ (byte 2)
-            spu[offset + 4] = (byte)0x03;			// DCC 03 = Set Colors
-            spu[offset + 5] = (byte)col1;			// Palette for the 4 colors (byte 1)
-            spu[offset + 6] = (byte)col2;			// Palette for the 4 colors (byte 2)
-            spu[offset + 7] = (byte)0x04;			// DCC 04 = Set Contrast
-            spu[offset + 8] = (byte)cont1;			// Transparency values for the 4 colors (byte 1)
-            spu[offset + 9] = (byte)cont2;			// Transparency values for the 4 colors (byte 2)
-            spu[offset + 10] = (byte)0x05;			// DCC 05 = Set Position
+            spu[offset + 4] = 0x03;			// DCC 03 = Set Colors
+            spu[offset + 5] = col1;			// Palette for the 4 colors (byte 1)
+            spu[offset + 6] = col2;			// Palette for the 4 colors (byte 2)
+            spu[offset + 7] = 0x04;			// DCC 04 = Set Contrast
+            spu[offset + 8] = cont1;			// Transparency values for the 4 colors (byte 1)
+            spu[offset + 9] = cont2;			// Transparency values for the 4 colors (byte 2)
+            spu[offset + 10] = 0x05;			// DCC 05 = Set Position
             spu[offset + 11] = (byte)(x1 / 0x10);									// X1a X1b
             spu[offset + 12] = (byte)((x1 % 0x10) * 0x10 + ((x1 + bmp.Width) / 0x100));	// X1c X2a
             spu[offset + 13] = (byte)((x1 + bmp.Width) % 0x100);					// X2b X2c
             spu[offset + 14] = (byte)(y1 / 0x10);									// Y1a Y1b (reverse the lines)
             spu[offset + 15] = (byte)((y1 % 0x10) * 0x10 + ((y1 + bmp.Height) / 0x100)); // Y1c Y2a (reverse the lines)
             spu[offset + 16] = (byte)((y1 + bmp.Height) % 0x100); // Y2b Y2c (reverse the lines)
-            spu[offset + 17] = (byte)0x06;			// DCC 06 = Set PX fields offsets
-            spu[offset + 18] = (byte)0x00;			// Offset for first PX field (byte 1)
-            spu[offset + 19] = (byte)0x04;			// Offset for first PX field (byte 2)
+            spu[offset + 17] = 0x06;			// DCC 06 = Set PX fields offsets
+            spu[offset + 18] = 0x00;			// Offset for first PX field (byte 1)
+            spu[offset + 19] = 0x04;			// Offset for first PX field (byte 2)
             n = 4 + field1size;
             spu[offset + 20] = (byte)(n / 0x100);	// Offset for second PX field (byte 1)
             spu[offset + 21] = (byte)(n % 0x100);	// Offset for second PX field (byte 2)
-            spu[offset + 22] = (byte)0x01;			// DCC 01 = Start Display
-            spu[offset + 23] = (byte)0xFF;			// DCC FF = End of Command
+            spu[offset + 22] = 0x01;			// DCC 01 = Start Display
+            spu[offset + 23] = 0xFF;			// DCC FF = End of Command
 
             // 2nd Display Control Sequence (DCSQ)
             n = timelength / 1024;
@@ -670,8 +619,8 @@ namespace SubRenderer
             n = offset + 24;
             spu[offset + 26] = (byte)(n / 0x100);	// Offset to next DCSQ (itself) (byte 1)
             spu[offset + 27] = (byte)(n % 0x100);	// Offset to next DCSQ (itself) (byte 2)
-            spu[offset + 28] = (byte)0x02;			// DCC 02 = End Display
-            spu[offset + 29] = (byte)0xFF;
+            spu[offset + 28] = 0x02;			// DCC 02 = End Display
+            spu[offset + 29] = 0xFF;
 
             // Building & Dumping the Program Stream (PS) packets
             byte[] pspes = new byte[30];
@@ -687,52 +636,52 @@ namespace SubRenderer
 
             // Building PS Header
             pspes[0] = 0x00;
-            pspes[1] = (byte)0x00;
-            pspes[2] = (byte)0x01;
-            pspes[3] = (byte)0xba;
-            pspes[4] = (byte)0x44;  // dummy header to fool mkvmerge
-            pspes[5] = (byte)0x02;
-            pspes[6] = (byte)0xc4;
-            pspes[7] = (byte)0x82;
-            pspes[8] = (byte)0x04;
-            pspes[9] = (byte)0xa9;
-            pspes[10] = (byte)0x01;
-            pspes[11] = (byte)0x89;
-            pspes[12] = (byte)0xc3;
-            pspes[13] = (byte)0xf8;
+            pspes[1] = 0x00;
+            pspes[2] = 0x01;
+            pspes[3] = 0xba;
+            pspes[4] = 0x44;  // dummy header to fool mkvmerge
+            pspes[5] = 0x02;
+            pspes[6] = 0xc4;
+            pspes[7] = 0x82;
+            pspes[8] = 0x04;
+            pspes[9] = 0xa9;
+            pspes[10] = 0x01;
+            pspes[11] = 0x89;
+            pspes[12] = 0xc3;
+            pspes[13] = 0xf8;
             // Building PES (Packetized Elementary Stream) Header : Private_Stream_1
-            pspes[14] = (byte)0x00;
-            pspes[15] = (byte)0x00;
-            pspes[16] = (byte)0x01;
-            pspes[17] = (byte)0xbd;
-            pspes[20] = (byte)0x81;
+            pspes[14] = 0x00;
+            pspes[15] = 0x00;
+            pspes[16] = 0x01;
+            pspes[17] = 0xbd;
+            pspes[20] = 0x81;
 
             while (pos < spusize)
             {
                 npackets++;
                 if (npackets == 1)
                 {
-                    pspes[21] = (byte)0x80;	// 0x80 for first packet, 0x00 for the others
-                    pspes[22] = (byte)0x05;	// 0x05 for first packet, 0x00 for the others
+                    pspes[21] = 0x80;	// 0x80 for first packet, 0x00 for the others
+                    pspes[22] = 0x05;	// 0x05 for first packet, 0x00 for the others
                     pspes[23] = (byte)((timestart >> 29) | 0x21);	// 0x20 for subtitles + TimeStamp (byte 1 - 4 first bits) + Marker(1)
                     pspes[24] = (byte)((timestart >> 22) & 0xFF);	// TimeStamp (byte 2)
                     pspes[25] = (byte)(((timestart >> 14) & 0xFF) | 1);	// TimeStamp (byte 3) + Marker(1)
                     pspes[26] = (byte)((timestart >> 7) & 0xFF);	// TimeStamp (byte 4)
                     pspes[27] = (byte)(((timestart << 1) & 0xFF) | 1);	// TimeStamp (byte 5) + Marker(1)
-                    pspes[28] = (byte)0x20;	// Subtitle Id (0x20+id)
+                    pspes[28] = 0x20;	// Subtitle Id (0x20+id)
                     headersize = 29;
                 }
                 else
                 {
-                    pspes[21] = (byte)0x00;
-                    pspes[22] = (byte)0x00;
-                    pspes[23] = (byte)0x20;	// 0x20 for subtitles
+                    pspes[21] = 0x00;
+                    pspes[22] = 0x00;
+                    pspes[23] = 0x20;	// 0x20 for subtitles
                     headersize = 24;
                 }
 
                 spublock = new byte[spu.Length - pos];
                 for (int z = (int)pos; z < spu.Length; z++)
-                    spublock[z - pos] = (byte)spu[z];
+                    spublock[z - pos] = spu[z];
 
                 // Splitting the SPU block
                 if ((spusize - pos) > (0x800 - headersize))
@@ -894,7 +843,7 @@ namespace SubRenderer
         void mMkvMerge_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             Invoke(new Action(() => {
-                MessageBox.Show("Error while merging the mkv file!\n" + e.Data, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(e.Data, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 Environment.Exit(1);
             }));
         }
