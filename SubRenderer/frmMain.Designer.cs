@@ -48,6 +48,7 @@ namespace SubRenderer
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
             this.txtInputSub = new System.Windows.Forms.TextBox();
             this.grpInputFiles = new System.Windows.Forms.GroupBox();
@@ -102,6 +103,7 @@ namespace SubRenderer
             this.mnuExit = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuAbout = new System.Windows.Forms.ToolStripMenuItem();
+            this.tmrRender = new System.Windows.Forms.Timer(this.components);
             this.grpInputFiles.SuspendLayout();
             this.grpMain.SuspendLayout();
             this.grpOutput.SuspendLayout();
@@ -110,10 +112,11 @@ namespace SubRenderer
             // 
             // txtInputSub
             // 
-            this.txtInputSub.Location = new System.Drawing.Point(6, 33);
+            this.txtInputSub.Location = new System.Drawing.Point(8, 41);
+            this.txtInputSub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtInputSub.Name = "txtInputSub";
             this.txtInputSub.ReadOnly = true;
-            this.txtInputSub.Size = new System.Drawing.Size(301, 20);
+            this.txtInputSub.Size = new System.Drawing.Size(400, 22);
             this.txtInputSub.TabIndex = 0;
             // 
             // grpInputFiles
@@ -124,17 +127,20 @@ namespace SubRenderer
             this.grpInputFiles.Controls.Add(this.lblSubtitle);
             this.grpInputFiles.Controls.Add(this.txtInputVideo);
             this.grpInputFiles.Controls.Add(this.txtInputSub);
-            this.grpInputFiles.Location = new System.Drawing.Point(12, 27);
+            this.grpInputFiles.Location = new System.Drawing.Point(16, 33);
+            this.grpInputFiles.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.grpInputFiles.Name = "grpInputFiles";
-            this.grpInputFiles.Size = new System.Drawing.Size(399, 119);
+            this.grpInputFiles.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.grpInputFiles.Size = new System.Drawing.Size(532, 146);
             this.grpInputFiles.TabIndex = 1;
             this.grpInputFiles.TabStop = false;
             // 
             // btnBrowseVideo
             // 
-            this.btnBrowseVideo.Location = new System.Drawing.Point(313, 80);
+            this.btnBrowseVideo.Location = new System.Drawing.Point(417, 98);
+            this.btnBrowseVideo.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnBrowseVideo.Name = "btnBrowseVideo";
-            this.btnBrowseVideo.Size = new System.Drawing.Size(75, 23);
+            this.btnBrowseVideo.Size = new System.Drawing.Size(100, 28);
             this.btnBrowseVideo.TabIndex = 5;
             this.btnBrowseVideo.Text = "Browse...";
             this.btnBrowseVideo.UseVisualStyleBackColor = true;
@@ -142,9 +148,10 @@ namespace SubRenderer
             // 
             // btnBrowseSub
             // 
-            this.btnBrowseSub.Location = new System.Drawing.Point(313, 31);
+            this.btnBrowseSub.Location = new System.Drawing.Point(417, 38);
+            this.btnBrowseSub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnBrowseSub.Name = "btnBrowseSub";
-            this.btnBrowseSub.Size = new System.Drawing.Size(75, 23);
+            this.btnBrowseSub.Size = new System.Drawing.Size(100, 28);
             this.btnBrowseSub.TabIndex = 4;
             this.btnBrowseSub.Text = "Browse...";
             this.btnBrowseSub.UseVisualStyleBackColor = true;
@@ -153,27 +160,30 @@ namespace SubRenderer
             // lblVideo
             // 
             this.lblVideo.AutoSize = true;
-            this.lblVideo.Location = new System.Drawing.Point(3, 66);
+            this.lblVideo.Location = new System.Drawing.Point(4, 81);
+            this.lblVideo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblVideo.Name = "lblVideo";
-            this.lblVideo.Size = new System.Drawing.Size(79, 13);
+            this.lblVideo.Size = new System.Drawing.Size(103, 17);
             this.lblVideo.TabIndex = 3;
             this.lblVideo.Text = "Input video file:";
             // 
             // lblSubtitle
             // 
             this.lblSubtitle.AutoSize = true;
-            this.lblSubtitle.Location = new System.Drawing.Point(3, 16);
+            this.lblSubtitle.Location = new System.Drawing.Point(4, 20);
+            this.lblSubtitle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSubtitle.Name = "lblSubtitle";
-            this.lblSubtitle.Size = new System.Drawing.Size(86, 13);
+            this.lblSubtitle.Size = new System.Drawing.Size(114, 17);
             this.lblSubtitle.TabIndex = 2;
             this.lblSubtitle.Text = "Input subtitle file:";
             // 
             // txtInputVideo
             // 
-            this.txtInputVideo.Location = new System.Drawing.Point(6, 82);
+            this.txtInputVideo.Location = new System.Drawing.Point(8, 101);
+            this.txtInputVideo.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtInputVideo.Name = "txtInputVideo";
             this.txtInputVideo.ReadOnly = true;
-            this.txtInputVideo.Size = new System.Drawing.Size(301, 20);
+            this.txtInputVideo.Size = new System.Drawing.Size(400, 22);
             this.txtInputVideo.TabIndex = 1;
             // 
             // grpMain
@@ -200,9 +210,11 @@ namespace SubRenderer
             this.grpMain.Controls.Add(this.cmbRes);
             this.grpMain.Controls.Add(this.lblRes);
             this.grpMain.Enabled = false;
-            this.grpMain.Location = new System.Drawing.Point(417, 27);
+            this.grpMain.Location = new System.Drawing.Point(556, 33);
+            this.grpMain.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.grpMain.Name = "grpMain";
-            this.grpMain.Size = new System.Drawing.Size(477, 401);
+            this.grpMain.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.grpMain.Size = new System.Drawing.Size(636, 494);
             this.grpMain.TabIndex = 2;
             this.grpMain.TabStop = false;
             // 
@@ -210,25 +222,28 @@ namespace SubRenderer
             // 
             this.cmbFps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbFps.FormattingEnabled = true;
-            this.cmbFps.Location = new System.Drawing.Point(397, 31);
+            this.cmbFps.Location = new System.Drawing.Point(529, 38);
+            this.cmbFps.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.cmbFps.Name = "cmbFps";
-            this.cmbFps.Size = new System.Drawing.Size(69, 21);
+            this.cmbFps.Size = new System.Drawing.Size(91, 24);
             this.cmbFps.TabIndex = 28;
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(394, 15);
+            this.label3.Location = new System.Drawing.Point(525, 18);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(30, 13);
+            this.label3.Size = new System.Drawing.Size(38, 17);
             this.label3.TabIndex = 27;
             this.label3.Text = "FPS:";
             // 
             // txtSample
             // 
-            this.txtSample.Location = new System.Drawing.Point(9, 372);
+            this.txtSample.Location = new System.Drawing.Point(12, 458);
+            this.txtSample.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtSample.Name = "txtSample";
-            this.txtSample.Size = new System.Drawing.Size(400, 20);
+            this.txtSample.Size = new System.Drawing.Size(532, 22);
             this.txtSample.TabIndex = 26;
             this.txtSample.Text = "Sample සාම්පල්";
             this.txtSample.TextChanged += new System.EventHandler(this.txtSample_TextChanged);
@@ -236,71 +251,79 @@ namespace SubRenderer
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(422, 125);
+            this.label2.Location = new System.Drawing.Point(563, 154);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(44, 13);
+            this.label2.Size = new System.Drawing.Size(58, 17);
             this.label2.TabIndex = 25;
             this.label2.Text = "Position";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 125);
+            this.label1.Location = new System.Drawing.Point(8, 154);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(48, 13);
+            this.label1.Size = new System.Drawing.Size(61, 17);
             this.label1.TabIndex = 24;
             this.label1.Text = "Preview:";
             // 
             // pBorderCol
             // 
             this.pBorderCol.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pBorderCol.Location = new System.Drawing.Point(397, 88);
+            this.pBorderCol.Location = new System.Drawing.Point(529, 108);
+            this.pBorderCol.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.pBorderCol.Name = "pBorderCol";
-            this.pBorderCol.Size = new System.Drawing.Size(69, 21);
+            this.pBorderCol.Size = new System.Drawing.Size(91, 25);
             this.pBorderCol.TabIndex = 23;
             // 
             // lblBorderCol
             // 
             this.lblBorderCol.AutoSize = true;
-            this.lblBorderCol.Location = new System.Drawing.Point(394, 72);
+            this.lblBorderCol.Location = new System.Drawing.Point(525, 89);
+            this.lblBorderCol.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblBorderCol.Name = "lblBorderCol";
-            this.lblBorderCol.Size = new System.Drawing.Size(67, 13);
+            this.lblBorderCol.Size = new System.Drawing.Size(90, 17);
             this.lblBorderCol.TabIndex = 22;
             this.lblBorderCol.Text = "Border color:";
             // 
             // lblFontCol
             // 
             this.lblFontCol.AutoSize = true;
-            this.lblFontCol.Location = new System.Drawing.Point(294, 72);
+            this.lblFontCol.Location = new System.Drawing.Point(392, 89);
+            this.lblFontCol.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFontCol.Name = "lblFontCol";
-            this.lblFontCol.Size = new System.Drawing.Size(57, 13);
+            this.lblFontCol.Size = new System.Drawing.Size(75, 17);
             this.lblFontCol.TabIndex = 21;
             this.lblFontCol.Text = "Font color:";
             // 
             // pFontCol
             // 
             this.pFontCol.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pFontCol.Location = new System.Drawing.Point(297, 88);
+            this.pFontCol.Location = new System.Drawing.Point(396, 108);
+            this.pFontCol.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.pFontCol.Name = "pFontCol";
-            this.pFontCol.Size = new System.Drawing.Size(69, 21);
+            this.pFontCol.Size = new System.Drawing.Size(91, 25);
             this.pFontCol.TabIndex = 19;
             // 
             // cmbFontSize
             // 
             this.cmbFontSize.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbFontSize.FormattingEnabled = true;
-            this.cmbFontSize.Location = new System.Drawing.Point(196, 88);
+            this.cmbFontSize.Location = new System.Drawing.Point(261, 108);
+            this.cmbFontSize.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.cmbFontSize.Name = "cmbFontSize";
-            this.cmbFontSize.Size = new System.Drawing.Size(69, 21);
+            this.cmbFontSize.Size = new System.Drawing.Size(91, 24);
             this.cmbFontSize.TabIndex = 18;
             this.cmbFontSize.SelectedIndexChanged += new System.EventHandler(this.cmbFontSize_SelectedIndexChanged);
             // 
             // lblFontSize
             // 
             this.lblFontSize.AutoSize = true;
-            this.lblFontSize.Location = new System.Drawing.Point(193, 72);
+            this.lblFontSize.Location = new System.Drawing.Point(257, 89);
+            this.lblFontSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFontSize.Name = "lblFontSize";
-            this.lblFontSize.Size = new System.Drawing.Size(52, 13);
+            this.lblFontSize.Size = new System.Drawing.Size(69, 17);
             this.lblFontSize.TabIndex = 17;
             this.lblFontSize.Text = "Font size:";
             // 
@@ -308,26 +331,28 @@ namespace SubRenderer
             // 
             this.cmbFont.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbFont.FormattingEnabled = true;
-            this.cmbFont.Location = new System.Drawing.Point(9, 88);
+            this.cmbFont.Location = new System.Drawing.Point(12, 108);
+            this.cmbFont.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.cmbFont.Name = "cmbFont";
-            this.cmbFont.Size = new System.Drawing.Size(160, 21);
+            this.cmbFont.Size = new System.Drawing.Size(212, 24);
             this.cmbFont.TabIndex = 16;
             this.cmbFont.SelectedIndexChanged += new System.EventHandler(this.cmbFont_SelectedIndexChanged);
             // 
             // lblFont
             // 
             this.lblFont.AutoSize = true;
-            this.lblFont.Location = new System.Drawing.Point(6, 72);
+            this.lblFont.Location = new System.Drawing.Point(8, 89);
+            this.lblFont.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFont.Name = "lblFont";
-            this.lblFont.Size = new System.Drawing.Size(31, 13);
+            this.lblFont.Size = new System.Drawing.Size(40, 17);
             this.lblFont.TabIndex = 15;
             this.lblFont.Text = "Font:";
             // 
             // scrPos
             // 
-            this.scrPos.Location = new System.Drawing.Point(435, 141);
+            this.scrPos.Location = new System.Drawing.Point(580, 174);
             this.scrPos.Name = "scrPos";
-            this.scrPos.Size = new System.Drawing.Size(17, 225);
+            this.scrPos.Size = new System.Drawing.Size(17, 277);
             this.scrPos.TabIndex = 14;
             this.scrPos.Scroll += new System.Windows.Forms.ScrollEventHandler(this.scrPos_Scroll);
             // 
@@ -335,17 +360,19 @@ namespace SubRenderer
             // 
             this.pPreview.BackColor = System.Drawing.SystemColors.AppWorkspace;
             this.pPreview.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.pPreview.Location = new System.Drawing.Point(9, 141);
+            this.pPreview.Location = new System.Drawing.Point(12, 174);
+            this.pPreview.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.pPreview.Name = "pPreview";
-            this.pPreview.Size = new System.Drawing.Size(400, 225);
+            this.pPreview.Size = new System.Drawing.Size(532, 276);
             this.pPreview.TabIndex = 13;
             this.pPreview.Paint += new System.Windows.Forms.PaintEventHandler(this.pPreview_Paint);
             // 
             // txtHeight
             // 
-            this.txtHeight.Location = new System.Drawing.Point(297, 32);
+            this.txtHeight.Location = new System.Drawing.Point(396, 39);
+            this.txtHeight.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtHeight.Name = "txtHeight";
-            this.txtHeight.Size = new System.Drawing.Size(69, 20);
+            this.txtHeight.Size = new System.Drawing.Size(91, 22);
             this.txtHeight.TabIndex = 5;
             this.txtHeight.Text = "0";
             this.txtHeight.Value = 0;
@@ -354,17 +381,19 @@ namespace SubRenderer
             // lblHeight
             // 
             this.lblHeight.AutoSize = true;
-            this.lblHeight.Location = new System.Drawing.Point(294, 16);
+            this.lblHeight.Location = new System.Drawing.Point(392, 20);
+            this.lblHeight.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblHeight.Name = "lblHeight";
-            this.lblHeight.Size = new System.Drawing.Size(41, 13);
+            this.lblHeight.Size = new System.Drawing.Size(53, 17);
             this.lblHeight.TabIndex = 4;
             this.lblHeight.Text = "Height:";
             // 
             // txtWidth
             // 
-            this.txtWidth.Location = new System.Drawing.Point(196, 33);
+            this.txtWidth.Location = new System.Drawing.Point(261, 41);
+            this.txtWidth.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtWidth.Name = "txtWidth";
-            this.txtWidth.Size = new System.Drawing.Size(69, 20);
+            this.txtWidth.Size = new System.Drawing.Size(91, 22);
             this.txtWidth.TabIndex = 3;
             this.txtWidth.Text = "0";
             this.txtWidth.Value = 0;
@@ -373,9 +402,10 @@ namespace SubRenderer
             // lblWidth
             // 
             this.lblWidth.AutoSize = true;
-            this.lblWidth.Location = new System.Drawing.Point(193, 17);
+            this.lblWidth.Location = new System.Drawing.Point(257, 21);
+            this.lblWidth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblWidth.Name = "lblWidth";
-            this.lblWidth.Size = new System.Drawing.Size(38, 13);
+            this.lblWidth.Size = new System.Drawing.Size(48, 17);
             this.lblWidth.TabIndex = 2;
             this.lblWidth.Text = "Width:";
             // 
@@ -383,18 +413,20 @@ namespace SubRenderer
             // 
             this.cmbRes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbRes.FormattingEnabled = true;
-            this.cmbRes.Location = new System.Drawing.Point(9, 32);
+            this.cmbRes.Location = new System.Drawing.Point(12, 39);
+            this.cmbRes.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.cmbRes.Name = "cmbRes";
-            this.cmbRes.Size = new System.Drawing.Size(160, 21);
+            this.cmbRes.Size = new System.Drawing.Size(212, 24);
             this.cmbRes.TabIndex = 1;
             this.cmbRes.SelectedIndexChanged += new System.EventHandler(this.cmbRes_SelectedIndexChanged);
             // 
             // lblRes
             // 
             this.lblRes.AutoSize = true;
-            this.lblRes.Location = new System.Drawing.Point(6, 16);
+            this.lblRes.Location = new System.Drawing.Point(8, 20);
+            this.lblRes.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblRes.Name = "lblRes";
-            this.lblRes.Size = new System.Drawing.Size(60, 13);
+            this.lblRes.Size = new System.Drawing.Size(79, 17);
             this.lblRes.TabIndex = 0;
             this.lblRes.Text = "Resolution:";
             // 
@@ -411,17 +443,20 @@ namespace SubRenderer
             this.grpOutput.Controls.Add(this.label4);
             this.grpOutput.Controls.Add(this.txtSaveTo);
             this.grpOutput.Enabled = false;
-            this.grpOutput.Location = new System.Drawing.Point(12, 309);
+            this.grpOutput.Location = new System.Drawing.Point(16, 380);
+            this.grpOutput.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.grpOutput.Name = "grpOutput";
-            this.grpOutput.Size = new System.Drawing.Size(399, 119);
+            this.grpOutput.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.grpOutput.Size = new System.Drawing.Size(532, 146);
             this.grpOutput.TabIndex = 3;
             this.grpOutput.TabStop = false;
             // 
             // btnExportSub
             // 
-            this.btnExportSub.Location = new System.Drawing.Point(9, 72);
+            this.btnExportSub.Location = new System.Drawing.Point(12, 89);
+            this.btnExportSub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnExportSub.Name = "btnExportSub";
-            this.btnExportSub.Size = new System.Drawing.Size(133, 41);
+            this.btnExportSub.Size = new System.Drawing.Size(177, 50);
             this.btnExportSub.TabIndex = 6;
             this.btnExportSub.Text = "Export subtitle only";
             this.btnExportSub.UseVisualStyleBackColor = true;
@@ -429,9 +464,10 @@ namespace SubRenderer
             // 
             // btnRender
             // 
-            this.btnRender.Location = new System.Drawing.Point(255, 72);
+            this.btnRender.Location = new System.Drawing.Point(340, 89);
+            this.btnRender.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnRender.Name = "btnRender";
-            this.btnRender.Size = new System.Drawing.Size(133, 41);
+            this.btnRender.Size = new System.Drawing.Size(177, 50);
             this.btnRender.TabIndex = 5;
             this.btnRender.Text = "Start render";
             this.btnRender.UseVisualStyleBackColor = true;
@@ -439,9 +475,10 @@ namespace SubRenderer
             // 
             // btnBrowseOutput
             // 
-            this.btnBrowseOutput.Location = new System.Drawing.Point(313, 30);
+            this.btnBrowseOutput.Location = new System.Drawing.Point(417, 37);
+            this.btnBrowseOutput.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnBrowseOutput.Name = "btnBrowseOutput";
-            this.btnBrowseOutput.Size = new System.Drawing.Size(75, 23);
+            this.btnBrowseOutput.Size = new System.Drawing.Size(100, 28);
             this.btnBrowseOutput.TabIndex = 4;
             this.btnBrowseOutput.Text = "Browse...";
             this.btnBrowseOutput.UseVisualStyleBackColor = true;
@@ -450,18 +487,20 @@ namespace SubRenderer
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(6, 16);
+            this.label4.Location = new System.Drawing.Point(8, 20);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(96, 13);
+            this.label4.Size = new System.Drawing.Size(128, 17);
             this.label4.TabIndex = 2;
             this.label4.Text = "Output destination:";
             // 
             // txtSaveTo
             // 
-            this.txtSaveTo.Location = new System.Drawing.Point(9, 32);
+            this.txtSaveTo.Location = new System.Drawing.Point(12, 39);
+            this.txtSaveTo.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtSaveTo.Name = "txtSaveTo";
             this.txtSaveTo.ReadOnly = true;
-            this.txtSaveTo.Size = new System.Drawing.Size(298, 20);
+            this.txtSaveTo.Size = new System.Drawing.Size(396, 22);
             this.txtSaveTo.TabIndex = 0;
             // 
             // dlgSub
@@ -474,17 +513,19 @@ namespace SubRenderer
             // 
             // progressBar
             // 
-            this.progressBar.Location = new System.Drawing.Point(12, 457);
+            this.progressBar.Location = new System.Drawing.Point(16, 562);
+            this.progressBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(881, 23);
+            this.progressBar.Size = new System.Drawing.Size(1175, 28);
             this.progressBar.TabIndex = 4;
             // 
             // lblProgress
             // 
             this.lblProgress.AutoSize = true;
-            this.lblProgress.Location = new System.Drawing.Point(9, 441);
+            this.lblProgress.Location = new System.Drawing.Point(12, 543);
+            this.lblProgress.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblProgress.Name = "lblProgress";
-            this.lblProgress.Size = new System.Drawing.Size(48, 13);
+            this.lblProgress.Size = new System.Drawing.Size(65, 17);
             this.lblProgress.TabIndex = 5;
             this.lblProgress.Text = "Progress";
             // 
@@ -494,12 +535,13 @@ namespace SubRenderer
             // 
             // menuStrip1
             // 
+            this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuFile,
             this.mnuHelp});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(905, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(1207, 28);
             this.menuStrip1.TabIndex = 6;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -515,21 +557,21 @@ namespace SubRenderer
             this.toolStripMenuItem2,
             this.mnuExit});
             this.mnuFile.Name = "mnuFile";
-            this.mnuFile.Size = new System.Drawing.Size(37, 20);
+            this.mnuFile.Size = new System.Drawing.Size(46, 24);
             this.mnuFile.Text = "File";
             // 
             // mnuSubFile
             // 
             this.mnuSubFile.Name = "mnuSubFile";
             this.mnuSubFile.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.mnuSubFile.Size = new System.Drawing.Size(204, 22);
+            this.mnuSubFile.Size = new System.Drawing.Size(256, 26);
             this.mnuSubFile.Text = "Load subtitle file";
             this.mnuSubFile.Click += new System.EventHandler(this.mnuSubFile_Click);
             // 
             // mnuVideoFile
             // 
             this.mnuVideoFile.Name = "mnuVideoFile";
-            this.mnuVideoFile.Size = new System.Drawing.Size(204, 22);
+            this.mnuVideoFile.Size = new System.Drawing.Size(256, 26);
             this.mnuVideoFile.Text = "Load video file";
             this.mnuVideoFile.Click += new System.EventHandler(this.mnuVideoFile_Click);
             // 
@@ -537,20 +579,20 @@ namespace SubRenderer
             // 
             this.mnuSaveLoc.Name = "mnuSaveLoc";
             this.mnuSaveLoc.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.mnuSaveLoc.Size = new System.Drawing.Size(204, 22);
+            this.mnuSaveLoc.Size = new System.Drawing.Size(256, 26);
             this.mnuSaveLoc.Text = "Save location";
             this.mnuSaveLoc.Click += new System.EventHandler(this.mnuSaveLoc_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(201, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(253, 6);
             // 
             // mnuExportSub
             // 
             this.mnuExportSub.Name = "mnuExportSub";
             this.mnuExportSub.ShortcutKeys = System.Windows.Forms.Keys.F11;
-            this.mnuExportSub.Size = new System.Drawing.Size(204, 22);
+            this.mnuExportSub.Size = new System.Drawing.Size(256, 26);
             this.mnuExportSub.Text = "Export subtitle only";
             this.mnuExportSub.Click += new System.EventHandler(this.mnuExportSub_Click);
             // 
@@ -558,19 +600,19 @@ namespace SubRenderer
             // 
             this.mnuRender.Name = "mnuRender";
             this.mnuRender.ShortcutKeys = System.Windows.Forms.Keys.F12;
-            this.mnuRender.Size = new System.Drawing.Size(204, 22);
+            this.mnuRender.Size = new System.Drawing.Size(256, 26);
             this.mnuRender.Text = "Start render";
             this.mnuRender.Click += new System.EventHandler(this.mnuRender_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(201, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(253, 6);
             // 
             // mnuExit
             // 
             this.mnuExit.Name = "mnuExit";
-            this.mnuExit.Size = new System.Drawing.Size(204, 22);
+            this.mnuExit.Size = new System.Drawing.Size(256, 26);
             this.mnuExit.Text = "Exit";
             this.mnuExit.Click += new System.EventHandler(this.mnuExit_Click);
             // 
@@ -579,22 +621,26 @@ namespace SubRenderer
             this.mnuHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuAbout});
             this.mnuHelp.Name = "mnuHelp";
-            this.mnuHelp.Size = new System.Drawing.Size(44, 20);
+            this.mnuHelp.Size = new System.Drawing.Size(55, 24);
             this.mnuHelp.Text = "Help";
             // 
             // mnuAbout
             // 
             this.mnuAbout.Name = "mnuAbout";
             this.mnuAbout.ShortcutKeys = System.Windows.Forms.Keys.F1;
-            this.mnuAbout.Size = new System.Drawing.Size(126, 22);
+            this.mnuAbout.Size = new System.Drawing.Size(157, 26);
             this.mnuAbout.Text = "About";
             this.mnuAbout.Click += new System.EventHandler(this.mnuAbout_Click);
             // 
+            // tmrRender
+            // 
+            this.tmrRender.Tick += new System.EventHandler(this.tmrRender_Tick);
+            // 
             // frmMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(905, 492);
+            this.ClientSize = new System.Drawing.Size(1207, 606);
             this.Controls.Add(this.lblProgress);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.grpOutput);
@@ -604,6 +650,7 @@ namespace SubRenderer
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.MaximizeBox = false;
             this.Name = "frmMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -677,6 +724,7 @@ namespace SubRenderer
         private System.Windows.Forms.ToolStripMenuItem mnuExit;
         private System.Windows.Forms.ToolStripMenuItem mnuHelp;
         private System.Windows.Forms.ToolStripMenuItem mnuAbout;
+        private System.Windows.Forms.Timer tmrRender;
     }
 }
 

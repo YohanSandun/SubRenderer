@@ -27,6 +27,9 @@ using System.Windows.Forms;
 using System.IO;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 //---------------------------------------------------------------------------
 namespace SubRenderer
 {
@@ -346,54 +349,12 @@ namespace SubRenderer
             grpInputFiles.Enabled = false;
             grpOutput.Enabled = false;
             grpMain.Enabled = false;
-            //GenerateBitmaps();
-            GenerateSubFile();
-            MergeMKV();
+            GenerateSubThreaded();
         }
 
-        // Generating bitmap files for each text line in subtitle.
-        void GenerateBitmaps() {
-            if (!Directory.Exists(mWorkingDir))
-                Directory.CreateDirectory(mWorkingDir);
-
-            // Parse .srt file and store extracted data in SRTSegment array.
-            SRTSegment[] segments = SRTParser.Parse(mSubtitleFile);
-
-            lblProgress.Text = "Generating Bitmaps...";
-            progressBar.Maximum = segments.Length;
-
-            // Creating .son file and start writing into it.
-            StreamWriter sw = new StreamWriter(File.OpenWrite(mWorkingDir + "subrenderer.son"));
-            sw.WriteLine("Contrast	(0 15 15 15)");
-            sw.WriteLine("Display_Area	(0 " + (txtHeight.Value - (txtHeight.Value * 90 / 720)) + " " + txtWidth.Value + " 715)");
-            sw.WriteLine("Color	(0 0 2 0)");
-            bool oldTwoLines = false;
-            for (int i = 0; i < segments.Length; i++)
-            {
-                if (segments[i].TextLines.Length >= 2 && !oldTwoLines)
-                {
-                    sw.WriteLine("Display_Area	(0 " + (scrPos.Value - (30 * txtHeight.Value / 720)) + " " + txtWidth.Value + " 715)");
-                    oldTwoLines = true;
-                }
-                else
-                {
-                    if (oldTwoLines)
-                    {
-                        sw.WriteLine("Display_Area	(0 " + (scrPos.Value) + " " + txtWidth.Value + " 715)");
-                        oldTwoLines = false;
-                    }
-                }
-                sw.WriteLine(segments[i].Number + "	" + segments[i].GetStartTime() + "	" + segments[i].GetEndTime() + "	" + segments[i].Number + ".bmp");
-                GenerateBitmap(segments[i].TextLines);
-                progressBar.Value++;
-                Application.DoEvents();
-            }
-            sw.Flush();
-            sw.Close();
-        }
-
-        // Create a bitmap file with given text.
         private Font fontText;
+
+        // Generates a bitmap with given lines
         Bitmap GenerateBitmap(string[] lines)
         {
             int lineHeight = (int)(fontText.Size + (fontText.Size * 9 / 40));
@@ -440,61 +401,126 @@ namespace SubRenderer
             return bmp;
         }
 
-        long fileOffset = 0; // For tracking current offset of the .sub file.
-
-        // Generaing the .sub and .idx files.
-        void GenerateSubFile() {
-            lblProgress.Text = "Merging bitmaps...";
-            long offset = 0;			
-            long timefrom;
-            long timeto;
-            int width = txtWidth.Value;
-            int height = txtHeight.Value;
-            float fps = float.Parse(cmbFps.SelectedItem.ToString());
-            int x = 0;
-            int y = 0;
-            byte cont1 = 0;
-            byte cont2 = 0;
-            byte col1 = 0;
-            byte col2 = 0;
-
-            fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), FontStyle.Bold);
-
+        private void GenerateSubThreaded()
+        {
             SRTSegment[] segments = SRTParser.Parse(mSubtitleFile);
-
-            // Creating .sub file and start writing into it.
-            BinaryWriter bw = new BinaryWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".sub"));
-            // Creating .idx file and start writing into it.
-            StreamWriter sw = new StreamWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".idx"));
-            
-            sw.WriteLine("# VobSub index file, v7 (do not modify this line!)");
-            sw.WriteLine("size: " + txtWidth.Value + "x" + txtHeight.Value);
-            sw.WriteLine("org: 0, 0");
-            sw.WriteLine("scale: 100%, 100%");
-            sw.WriteLine("alpha: 100%");
-            sw.WriteLine("smooth: OFF");
-            sw.WriteLine("fadein/out: 0, 0");
-            sw.WriteLine("align: OFF at LEFT TOP");
-            sw.WriteLine("time offset: 0");
-            sw.WriteLine("forced subs: OFF");
-            sw.WriteLine("palette: " + GetColorString(mFontColor) + ", ff0000, " + GetColorString(mBorderColor) + ", ffff00, ff8000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000");
-            sw.WriteLine("custom colors: OFF, tridx: 1110, colors: 808080, ffffff, 000000, 000000");
-            sw.WriteLine("langidx: 0");
-            sw.WriteLine("id: --, index: 0");
 
             progressBar.Maximum = segments.Length;
             progressBar.Value = 0;
 
-            cont1 = 16 * 15 + 15;
-            cont2 = 15;
+            int seg;
+            if (segments.Length % 4 == 0)
+                seg = segments.Length / 4;
+            else
+                seg = (segments.Length / 4) + 1;
 
-            col1 = 2;
-            col2 = 0;
+            int s1 = 0;
+            int s2 = seg;
+            int s3 = seg * 2;
+            int s4 = seg * 3;
 
-            x = 0;
-            y = txtHeight.Value;
+            int e1 = s2;
+            int e2 = s3;
+            int e3 = s4;
+            int e4 = segments.Length;
 
-            for (int i = 0; i < segments.Length; i++)
+            idxWriter = new StreamWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".idx"));
+
+            idxWriter.WriteLine("# VobSub index file, v7 (do not modify this line!)");
+            idxWriter.WriteLine("size: " + txtWidth.Value + "x" + txtHeight.Value);
+            idxWriter.WriteLine("org: 0, 0");
+            idxWriter.WriteLine("scale: 100%, 100%");
+            idxWriter.WriteLine("alpha: 100%");
+            idxWriter.WriteLine("smooth: OFF");
+            idxWriter.WriteLine("fadein/out: 0, 0");
+            idxWriter.WriteLine("align: OFF at LEFT TOP");
+            idxWriter.WriteLine("time offset: 0");
+            idxWriter.WriteLine("forced subs: OFF");
+            idxWriter.WriteLine("palette: " + GetColorString(mFontColor) + ", ff0000, " + GetColorString(mBorderColor) + ", ffff00, ff8000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000");
+            idxWriter.WriteLine("custom colors: OFF, tridx: 1110, colors: 808080, ffffff, 000000, 000000");
+            idxWriter.WriteLine("langidx: 0");
+            idxWriter.WriteLine("id: --, index: 0");
+
+            float fps = float.Parse(cmbFps.SelectedItem.ToString());
+
+            fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), FontStyle.Bold);
+
+            t1 = new Thread(() => GenerateSubFile(ref fos1, txtWidth.Value, txtHeight.Value, segments, s1, e1, list1, sb1, fps));
+            t1.Start();
+            t2 = new Thread(() => GenerateSubFile(ref fos2, txtWidth.Value, txtHeight.Value, segments, s2, e2, list2, sb2, fps));
+            t2.Start();
+            t3 = new Thread(() => GenerateSubFile(ref fos3, txtWidth.Value, txtHeight.Value, segments, s3, e3, list3, sb3, fps));
+            t3.Start();
+            t4 = new Thread(() => GenerateSubFile(ref fos4, txtWidth.Value, txtHeight.Value, segments, s4, e4, list4, sb4, fps));
+            t4.Start();
+
+            tmrRender.Enabled = true;
+        }
+
+        private int progress = 0;
+        private Thread[] threads;
+        //private Thread t1, t2, t3, t4;
+        private StreamWriter idxWriter;
+
+        private void tmrRender_Tick(object sender, EventArgs e)
+        {
+            if (!t1.IsAlive && !t2.IsAlive && !t3.IsAlive && !t4.IsAlive)
+            {
+                tmrRender.Enabled = false;
+
+                idxWriter.Write(sb1.ToString(0));
+                idxWriter.Write(sb2.ToString(sb1.LastOffset));
+                idxWriter.Write(sb3.ToString(sb2.LastOffset + sb1.LastOffset));
+                idxWriter.Write(sb4.ToString(sb1.LastOffset + sb2.LastOffset + sb3.LastOffset));
+
+                idxWriter.Flush();
+                idxWriter.Close();
+
+                BinaryWriter bw = new BinaryWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".sub"));
+
+                bw.Write(list1.ToArray(), 0, list1.Count);
+                bw.Write(list2.ToArray(), 0, list2.Count);
+                bw.Write(list3.ToArray(), 0, list3.Count);
+                bw.Write(list4.ToArray(), 0, list4.Count);
+
+                bw.Flush();
+                bw.Close();
+
+                MergeMKV();
+            } else
+                progressBar.Value = progress;
+        }
+
+        // Byte lists fo reach thread to store data.
+        private List<byte>[] lists;
+
+        //private List<byte> list1 = new List<byte>();
+        //private List<byte> list2 = new List<byte>();
+        //private List<byte> list3 = new List<byte>();
+        //private List<byte> list4 = new List<byte>();
+
+        // Timestamps for each thread
+        private Timestamp[] timeStamps;
+
+        //private Timestamp sb1 = new Timestamp();
+        //private Timestamp sb2 = new Timestamp();
+        //private Timestamp sb3 = new Timestamp();
+        //private Timestamp sb4 = new Timestamp();
+
+        // File offsets for each thread
+        private long[] fileOffsets;
+        //private long fos1 = 0;
+        //private long fos2 = 0;
+        //private long fos3 = 0;
+        //private long fos4 = 0;
+
+        // Generaing the .sub and .idx files.
+        void GenerateSubFile(ref long fos, int width, int height, SRTSegment[] segments, int start, int end, List<byte> list, Timestamp sb, float fps) {
+            long offset = 0;			
+            long timefrom;
+            long timeto;
+
+            for (int i = start; i < end; i++)
             {
                 int[] startTime = segments[i].GetStartTimeArray();
                 int[] endTime = segments[i].GetEndTimeArray();
@@ -502,22 +528,17 @@ namespace SubRenderer
                 timefrom = (long)((startTime[0] * 3600000) + (startTime[1] * 60000) + (startTime[2] * 1000) + (1.0f * startTime[3] * 1000 / fps));
                 timeto = (long)((endTime[0] * 3600000) + (endTime[1] * 60000) + (endTime[2] * 1000) + (1.0f * endTime[3] * 1000 / fps));
                 
-                sw.WriteLine("timestamp: " + GetNumberString((timefrom) / 3600000, 2) + ":" + GetNumberString(((timefrom) / 60000) % 60, 2) + ":" + GetNumberString(((timefrom) / 1000) % 60, 2) + ":" + GetNumberString((timefrom) % 1000, 3) + ", filepos: " + GetHexNumberString(offset, 9));
+                sb.WriteLine("timestamp: " + GetNumberString((timefrom) / 3600000, 2) + ":" + GetNumberString(((timefrom) / 60000) % 60, 2) + ":" + GetNumberString(((timefrom) / 1000) % 60, 2) + ":" + GetNumberString((timefrom) % 1000, 3) + ", filepos: ", offset);
 
                 Bitmap bmp = GenerateBitmap(segments[i].TextLines);
 
                 // Time used here is in 1/90000th second
-                offset += DumpSub(bmp, width, height, x, y, timefrom * 90, (timeto - timefrom) * 90, col1, col2, cont1, cont2, bw);
+                offset += DumpSub(ref fos, bmp, width, height, 0, height, timefrom * 90, (timeto - timefrom) * 90, 2, 0, 255, 15, list);
                 bmp.Dispose();
 
-                progressBar.Value++;
-                Application.DoEvents();
+                progress++;
             }
-            bw.Flush();
-            bw.Close();
-
-            sw.Flush();
-            sw.Close();
+            sb.LastOffset = offset;
 
             fontText.Dispose();
         }
@@ -549,7 +570,7 @@ namespace SubRenderer
         // The VobSub v7 sub file is really a stripped VOB containing
         // only the subtitle related blocks, so we have to emulate the
         // MPEG2 packet structure and the Subpicture format.
-        long DumpSub(Bitmap bmp, long width, long height, long x1, long y1, long timestart, long timelength, byte col1, byte col2, byte cont1, byte cont2, BinaryWriter bw)
+        long DumpSub(ref long fos, Bitmap bmp, long width, long height, long x1, long y1, long timestart, long timelength, byte col1, byte col2, byte cont1, byte cont2, List<byte> bw)
         {
             long i, n, y;
             byte[] spu = new byte[width * height + 50]; // Create the SPU (Sub Picture Unit)
@@ -563,14 +584,14 @@ namespace SubRenderer
             for (y = 0; y < bmp.Height; y += 2)
             {
                 // Process field1
-                fileOffset = 4 + field1size;
-                field1size += RLELineEncode(ref spu, ScanLine(data, y), bmp.Width);
+                fos = 4 + field1size;
+                field1size += RLELineEncode(ref fos, ref spu, ScanLine(data, y), bmp.Width);
             }
             for (y = 1; y < bmp.Height; y += 2)
             {
                 // Process field2
-                fileOffset = 4 + field1size + field2size;
-                field2size += RLELineEncode(ref spu, ScanLine(data, y), bmp.Width);
+                fos = 4 + field1size + field2size;
+                field2size += RLELineEncode(ref fos, ref spu, ScanLine(data, y), bmp.Width);
             }
             bmp.UnlockBits(data);
 
@@ -711,30 +732,35 @@ namespace SubRenderer
                 n = (headersize - 20) + spublocksize;
                 pspes[18] = (byte)(n / 0x100); // Size of the PES (byte 1)
                 pspes[19] = (byte)(n % 0x100); // Size of the PES (byte 2)
-                bw.Write(pspes, 0, (int)headersize);
-                bw.Write(spublock, 0, (int)spublocksize);
+
+                for (int pspes_i = 0; pspes_i < (int)headersize; pspes_i++)
+                    bw.Add(pspes[pspes_i]);
+                for (int spublock_i = 0; spublock_i < (int)spublocksize; spublock_i++)
+                    bw.Add(spublock[spublock_i]);
+                //bw.AddRange(pspes, 0, (int)headersize);
+                //bw.Write(spublock, 0, (int)spublocksize);
 
                 if (padding)
                 {
                     // Packetized Elementary Stream (PES) : Padding
-                    bw.Write((byte)0x00);
-                    bw.Write((byte)0x00);
-                    bw.Write((byte)0x01);
-                    bw.Write((byte)0xbe);
-                    bw.Write((byte)(paddingsize / 0x100)); // Padding Size (byte 1)
-                    bw.Write((byte)(paddingsize % 0x100)); // Padding Size (byte 2)
+                    bw.Add(0x00);
+                    bw.Add(0x00);
+                    bw.Add(0x01);
+                    bw.Add(0xbe);
+                    bw.Add((byte)(paddingsize / 0x100)); // Padding Size (byte 1)
+                    bw.Add((byte)(paddingsize % 0x100)); // Padding Size (byte 2)
                     for (i = 0; i < paddingsize; i++) 
-                        bw.Write((byte)255); // Padding bits
+                        bw.Add(255); // Padding bits
                 }
             }
             return npackets * 0x800;
         }
 
         // Dump a nibble in a buffer (Part of RLE processing)
-        void DumpNibble(byte value, ref byte[] rle, ref long size, ref byte pos)
+        void DumpNibble(ref long fos, byte value, ref byte[] rle, ref long size, ref byte pos)
         {
             byte shift = (byte)(6 - (2 * (pos)));
-            rle[size + fileOffset] = (byte)((rle[size + fileOffset] & (0xFC << shift)) | (value << shift));
+            rle[size + fos] = (byte)((rle[size + fos] & (0xFC << shift)) | (value << shift));
             if ((pos) == 3)
             {
                 (size)++;
@@ -744,7 +770,7 @@ namespace SubRenderer
         }
 
         // Run Length Encode (RLE) a (previously analyzed) line
-        long RLELineEncode(ref byte[] rleline, int[] srcline, long width)
+        long RLELineEncode(ref long fos, ref byte[] rleline, int[] srcline, long width)
         {
             byte pos = 0;
             long size = 0;
@@ -775,14 +801,14 @@ namespace SubRenderer
                         cpx = cpx % 255;
                         for (i = 0; i < n; i++)
                         {
-                            DumpNibble(0, ref rleline, ref size, ref pos);
-                            DumpNibble(0, ref rleline, ref size, ref pos);
-                            DumpNibble(0, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(opx, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 0, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 0, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 0, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(ref fos, opx, ref rleline, ref size, ref pos);
                         }
                     }
                     if (cpx > 63) n = 3;
@@ -790,18 +816,18 @@ namespace SubRenderer
                     else if (cpx > 3) n = 1;
                     else n = 0;
                     for (i = 0; i < n; i++)
-                        DumpNibble(0, ref rleline, ref size, ref pos);
+                        DumpNibble(ref fos, 0, ref rleline, ref size, ref pos);
                     for (i = n; i >= 0; i--)
-                        DumpNibble((byte)((cpx >> (int)(i * 2)) & 0x03), ref rleline, ref size, ref pos);
-                    DumpNibble(opx, ref rleline, ref size, ref pos);
+                        DumpNibble(ref fos, (byte)((cpx >> (int)(i * 2)) & 0x03), ref rleline, ref size, ref pos);
+                    DumpNibble(ref fos, opx, ref rleline, ref size, ref pos);
                     cpx = 1;
                 }
                 opx = px;
             }
 
             for (i = 0; i < 7; i++)
-                DumpNibble(0, ref rleline, ref size, ref pos);
-            DumpNibble(opx, ref rleline, ref size, ref pos); // dump pixel
+                DumpNibble(ref fos, 0, ref rleline, ref size, ref pos);
+            DumpNibble(ref fos, opx, ref rleline, ref size, ref pos); // dump pixel
 
             if (pos != 0)
                 size++;
@@ -870,25 +896,25 @@ namespace SubRenderer
         }
 
         // Convert number in to hex string
-        string GetHexNumberString(long number, int count)
+        public static string GetHexNumberString(long number, int count)
         {
             string hex = Convert.ToString(number, 16);
             return GetZeros(count - hex.Length) + hex;
         }
 
-        string GetNumberString(long number, int count)
+        public static string GetNumberString(long number, int count)
         {
             return GetZeros(count - number.ToString().Length) + number;
         }
 
-        string GetColorString(Color col)
+        public static string GetColorString(Color col)
         {
             string str = Convert.ToString(col.ToArgb() & 0x00ffffff, 16);
             str = GetZeros(6 - str.Length) + str;
             return str;
         }
 
-        string GetZeros(int count)
+        public static string GetZeros(int count)
         {
             string str = "";
             for (int i = 0; i < count; i++) str += "0";
@@ -914,8 +940,8 @@ namespace SubRenderer
             grpInputFiles.Enabled = false;
             grpOutput.Enabled = false;
             grpMain.Enabled = false;
-            GenerateBitmaps();
-            GenerateSubFile();
+            //GenerateBitmaps();
+            //GenerateSubFile();
             MessageBox.Show("Subtitle generated successfully!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
             Environment.Exit(1);
         }
@@ -956,6 +982,7 @@ namespace SubRenderer
             about.ShowDialog();
         }
 
+        
     }
 }
 //---------------------------------------------------------------------------
