@@ -89,7 +89,6 @@ namespace SubRenderer
             this.dlgSub = new System.Windows.Forms.OpenFileDialog();
             this.dlgVideo = new System.Windows.Forms.OpenFileDialog();
             this.progressBar = new System.Windows.Forms.ProgressBar();
-            this.lblProgress = new System.Windows.Forms.Label();
             this.dlgSave = new System.Windows.Forms.FolderBrowserDialog();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.mnuFile = new System.Windows.Forms.ToolStripMenuItem();
@@ -104,19 +103,24 @@ namespace SubRenderer
             this.mnuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.tmrRender = new System.Windows.Forms.Timer(this.components);
+            this.btnCancel = new System.Windows.Forms.Button();
+            this.btnNext = new System.Windows.Forms.Button();
+            this.btnBack = new System.Windows.Forms.Button();
+            this.grpProgress = new System.Windows.Forms.GroupBox();
             this.grpInputFiles.SuspendLayout();
             this.grpMain.SuspendLayout();
             this.grpOutput.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            this.grpProgress.SuspendLayout();
             this.SuspendLayout();
             // 
             // txtInputSub
             // 
-            this.txtInputSub.Location = new System.Drawing.Point(8, 41);
-            this.txtInputSub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtInputSub.Location = new System.Drawing.Point(47, 62);
+            this.txtInputSub.Margin = new System.Windows.Forms.Padding(4);
             this.txtInputSub.Name = "txtInputSub";
             this.txtInputSub.ReadOnly = true;
-            this.txtInputSub.Size = new System.Drawing.Size(400, 22);
+            this.txtInputSub.Size = new System.Drawing.Size(576, 22);
             this.txtInputSub.TabIndex = 0;
             // 
             // grpInputFiles
@@ -127,18 +131,18 @@ namespace SubRenderer
             this.grpInputFiles.Controls.Add(this.lblSubtitle);
             this.grpInputFiles.Controls.Add(this.txtInputVideo);
             this.grpInputFiles.Controls.Add(this.txtInputSub);
-            this.grpInputFiles.Location = new System.Drawing.Point(16, 33);
-            this.grpInputFiles.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.grpInputFiles.Location = new System.Drawing.Point(-12, 33);
+            this.grpInputFiles.Margin = new System.Windows.Forms.Padding(4);
             this.grpInputFiles.Name = "grpInputFiles";
-            this.grpInputFiles.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.grpInputFiles.Size = new System.Drawing.Size(532, 146);
+            this.grpInputFiles.Padding = new System.Windows.Forms.Padding(4);
+            this.grpInputFiles.Size = new System.Drawing.Size(789, 505);
             this.grpInputFiles.TabIndex = 1;
             this.grpInputFiles.TabStop = false;
             // 
             // btnBrowseVideo
             // 
-            this.btnBrowseVideo.Location = new System.Drawing.Point(417, 98);
-            this.btnBrowseVideo.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnBrowseVideo.Location = new System.Drawing.Point(630, 161);
+            this.btnBrowseVideo.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseVideo.Name = "btnBrowseVideo";
             this.btnBrowseVideo.Size = new System.Drawing.Size(100, 28);
             this.btnBrowseVideo.TabIndex = 5;
@@ -148,8 +152,8 @@ namespace SubRenderer
             // 
             // btnBrowseSub
             // 
-            this.btnBrowseSub.Location = new System.Drawing.Point(417, 38);
-            this.btnBrowseSub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnBrowseSub.Location = new System.Drawing.Point(631, 62);
+            this.btnBrowseSub.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseSub.Name = "btnBrowseSub";
             this.btnBrowseSub.Size = new System.Drawing.Size(100, 28);
             this.btnBrowseSub.TabIndex = 4;
@@ -160,17 +164,17 @@ namespace SubRenderer
             // lblVideo
             // 
             this.lblVideo.AutoSize = true;
-            this.lblVideo.Location = new System.Drawing.Point(4, 81);
+            this.lblVideo.Location = new System.Drawing.Point(42, 141);
             this.lblVideo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblVideo.Name = "lblVideo";
-            this.lblVideo.Size = new System.Drawing.Size(103, 17);
+            this.lblVideo.Size = new System.Drawing.Size(170, 17);
             this.lblVideo.TabIndex = 3;
-            this.lblVideo.Text = "Input video file:";
+            this.lblVideo.Text = "Input video file (Optional):";
             // 
             // lblSubtitle
             // 
             this.lblSubtitle.AutoSize = true;
-            this.lblSubtitle.Location = new System.Drawing.Point(4, 20);
+            this.lblSubtitle.Location = new System.Drawing.Point(43, 41);
             this.lblSubtitle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSubtitle.Name = "lblSubtitle";
             this.lblSubtitle.Size = new System.Drawing.Size(114, 17);
@@ -179,11 +183,11 @@ namespace SubRenderer
             // 
             // txtInputVideo
             // 
-            this.txtInputVideo.Location = new System.Drawing.Point(8, 101);
-            this.txtInputVideo.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtInputVideo.Location = new System.Drawing.Point(46, 161);
+            this.txtInputVideo.Margin = new System.Windows.Forms.Padding(4);
             this.txtInputVideo.Name = "txtInputVideo";
             this.txtInputVideo.ReadOnly = true;
-            this.txtInputVideo.Size = new System.Drawing.Size(400, 22);
+            this.txtInputVideo.Size = new System.Drawing.Size(576, 22);
             this.txtInputVideo.TabIndex = 1;
             // 
             // grpMain
@@ -210,11 +214,11 @@ namespace SubRenderer
             this.grpMain.Controls.Add(this.cmbRes);
             this.grpMain.Controls.Add(this.lblRes);
             this.grpMain.Enabled = false;
-            this.grpMain.Location = new System.Drawing.Point(556, 33);
-            this.grpMain.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.grpMain.Location = new System.Drawing.Point(-12, 33);
+            this.grpMain.Margin = new System.Windows.Forms.Padding(4);
             this.grpMain.Name = "grpMain";
-            this.grpMain.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.grpMain.Size = new System.Drawing.Size(636, 494);
+            this.grpMain.Padding = new System.Windows.Forms.Padding(4);
+            this.grpMain.Size = new System.Drawing.Size(789, 505);
             this.grpMain.TabIndex = 2;
             this.grpMain.TabStop = false;
             // 
@@ -222,8 +226,8 @@ namespace SubRenderer
             // 
             this.cmbFps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbFps.FormattingEnabled = true;
-            this.cmbFps.Location = new System.Drawing.Point(529, 38);
-            this.cmbFps.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cmbFps.Location = new System.Drawing.Point(562, 40);
+            this.cmbFps.Margin = new System.Windows.Forms.Padding(4);
             this.cmbFps.Name = "cmbFps";
             this.cmbFps.Size = new System.Drawing.Size(91, 24);
             this.cmbFps.TabIndex = 28;
@@ -231,7 +235,7 @@ namespace SubRenderer
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(525, 18);
+            this.label3.Location = new System.Drawing.Point(558, 20);
             this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(38, 17);
@@ -240,8 +244,8 @@ namespace SubRenderer
             // 
             // txtSample
             // 
-            this.txtSample.Location = new System.Drawing.Point(12, 458);
-            this.txtSample.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtSample.Location = new System.Drawing.Point(45, 460);
+            this.txtSample.Margin = new System.Windows.Forms.Padding(4);
             this.txtSample.Name = "txtSample";
             this.txtSample.Size = new System.Drawing.Size(532, 22);
             this.txtSample.TabIndex = 26;
@@ -251,7 +255,7 @@ namespace SubRenderer
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(563, 154);
+            this.label2.Location = new System.Drawing.Point(596, 156);
             this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(58, 17);
@@ -261,7 +265,7 @@ namespace SubRenderer
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(8, 154);
+            this.label1.Location = new System.Drawing.Point(41, 156);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(61, 17);
@@ -271,8 +275,8 @@ namespace SubRenderer
             // pBorderCol
             // 
             this.pBorderCol.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pBorderCol.Location = new System.Drawing.Point(529, 108);
-            this.pBorderCol.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.pBorderCol.Location = new System.Drawing.Point(562, 110);
+            this.pBorderCol.Margin = new System.Windows.Forms.Padding(4);
             this.pBorderCol.Name = "pBorderCol";
             this.pBorderCol.Size = new System.Drawing.Size(91, 25);
             this.pBorderCol.TabIndex = 23;
@@ -280,7 +284,7 @@ namespace SubRenderer
             // lblBorderCol
             // 
             this.lblBorderCol.AutoSize = true;
-            this.lblBorderCol.Location = new System.Drawing.Point(525, 89);
+            this.lblBorderCol.Location = new System.Drawing.Point(558, 91);
             this.lblBorderCol.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblBorderCol.Name = "lblBorderCol";
             this.lblBorderCol.Size = new System.Drawing.Size(90, 17);
@@ -290,7 +294,7 @@ namespace SubRenderer
             // lblFontCol
             // 
             this.lblFontCol.AutoSize = true;
-            this.lblFontCol.Location = new System.Drawing.Point(392, 89);
+            this.lblFontCol.Location = new System.Drawing.Point(425, 91);
             this.lblFontCol.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFontCol.Name = "lblFontCol";
             this.lblFontCol.Size = new System.Drawing.Size(75, 17);
@@ -300,8 +304,8 @@ namespace SubRenderer
             // pFontCol
             // 
             this.pFontCol.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pFontCol.Location = new System.Drawing.Point(396, 108);
-            this.pFontCol.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.pFontCol.Location = new System.Drawing.Point(429, 110);
+            this.pFontCol.Margin = new System.Windows.Forms.Padding(4);
             this.pFontCol.Name = "pFontCol";
             this.pFontCol.Size = new System.Drawing.Size(91, 25);
             this.pFontCol.TabIndex = 19;
@@ -310,8 +314,8 @@ namespace SubRenderer
             // 
             this.cmbFontSize.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbFontSize.FormattingEnabled = true;
-            this.cmbFontSize.Location = new System.Drawing.Point(261, 108);
-            this.cmbFontSize.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cmbFontSize.Location = new System.Drawing.Point(294, 110);
+            this.cmbFontSize.Margin = new System.Windows.Forms.Padding(4);
             this.cmbFontSize.Name = "cmbFontSize";
             this.cmbFontSize.Size = new System.Drawing.Size(91, 24);
             this.cmbFontSize.TabIndex = 18;
@@ -320,7 +324,7 @@ namespace SubRenderer
             // lblFontSize
             // 
             this.lblFontSize.AutoSize = true;
-            this.lblFontSize.Location = new System.Drawing.Point(257, 89);
+            this.lblFontSize.Location = new System.Drawing.Point(290, 91);
             this.lblFontSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFontSize.Name = "lblFontSize";
             this.lblFontSize.Size = new System.Drawing.Size(69, 17);
@@ -331,8 +335,8 @@ namespace SubRenderer
             // 
             this.cmbFont.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbFont.FormattingEnabled = true;
-            this.cmbFont.Location = new System.Drawing.Point(12, 108);
-            this.cmbFont.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cmbFont.Location = new System.Drawing.Point(45, 110);
+            this.cmbFont.Margin = new System.Windows.Forms.Padding(4);
             this.cmbFont.Name = "cmbFont";
             this.cmbFont.Size = new System.Drawing.Size(212, 24);
             this.cmbFont.TabIndex = 16;
@@ -341,7 +345,7 @@ namespace SubRenderer
             // lblFont
             // 
             this.lblFont.AutoSize = true;
-            this.lblFont.Location = new System.Drawing.Point(8, 89);
+            this.lblFont.Location = new System.Drawing.Point(41, 91);
             this.lblFont.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFont.Name = "lblFont";
             this.lblFont.Size = new System.Drawing.Size(40, 17);
@@ -350,7 +354,7 @@ namespace SubRenderer
             // 
             // scrPos
             // 
-            this.scrPos.Location = new System.Drawing.Point(580, 174);
+            this.scrPos.Location = new System.Drawing.Point(613, 176);
             this.scrPos.Name = "scrPos";
             this.scrPos.Size = new System.Drawing.Size(17, 277);
             this.scrPos.TabIndex = 14;
@@ -360,8 +364,8 @@ namespace SubRenderer
             // 
             this.pPreview.BackColor = System.Drawing.SystemColors.AppWorkspace;
             this.pPreview.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.pPreview.Location = new System.Drawing.Point(12, 174);
-            this.pPreview.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.pPreview.Location = new System.Drawing.Point(45, 176);
+            this.pPreview.Margin = new System.Windows.Forms.Padding(4);
             this.pPreview.Name = "pPreview";
             this.pPreview.Size = new System.Drawing.Size(532, 276);
             this.pPreview.TabIndex = 13;
@@ -369,8 +373,8 @@ namespace SubRenderer
             // 
             // txtHeight
             // 
-            this.txtHeight.Location = new System.Drawing.Point(396, 39);
-            this.txtHeight.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtHeight.Location = new System.Drawing.Point(429, 41);
+            this.txtHeight.Margin = new System.Windows.Forms.Padding(4);
             this.txtHeight.Name = "txtHeight";
             this.txtHeight.Size = new System.Drawing.Size(91, 22);
             this.txtHeight.TabIndex = 5;
@@ -381,7 +385,7 @@ namespace SubRenderer
             // lblHeight
             // 
             this.lblHeight.AutoSize = true;
-            this.lblHeight.Location = new System.Drawing.Point(392, 20);
+            this.lblHeight.Location = new System.Drawing.Point(425, 22);
             this.lblHeight.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblHeight.Name = "lblHeight";
             this.lblHeight.Size = new System.Drawing.Size(53, 17);
@@ -390,8 +394,8 @@ namespace SubRenderer
             // 
             // txtWidth
             // 
-            this.txtWidth.Location = new System.Drawing.Point(261, 41);
-            this.txtWidth.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtWidth.Location = new System.Drawing.Point(294, 43);
+            this.txtWidth.Margin = new System.Windows.Forms.Padding(4);
             this.txtWidth.Name = "txtWidth";
             this.txtWidth.Size = new System.Drawing.Size(91, 22);
             this.txtWidth.TabIndex = 3;
@@ -402,7 +406,7 @@ namespace SubRenderer
             // lblWidth
             // 
             this.lblWidth.AutoSize = true;
-            this.lblWidth.Location = new System.Drawing.Point(257, 21);
+            this.lblWidth.Location = new System.Drawing.Point(290, 23);
             this.lblWidth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblWidth.Name = "lblWidth";
             this.lblWidth.Size = new System.Drawing.Size(48, 17);
@@ -413,8 +417,8 @@ namespace SubRenderer
             // 
             this.cmbRes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbRes.FormattingEnabled = true;
-            this.cmbRes.Location = new System.Drawing.Point(12, 39);
-            this.cmbRes.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cmbRes.Location = new System.Drawing.Point(45, 41);
+            this.cmbRes.Margin = new System.Windows.Forms.Padding(4);
             this.cmbRes.Name = "cmbRes";
             this.cmbRes.Size = new System.Drawing.Size(212, 24);
             this.cmbRes.TabIndex = 1;
@@ -423,7 +427,7 @@ namespace SubRenderer
             // lblRes
             // 
             this.lblRes.AutoSize = true;
-            this.lblRes.Location = new System.Drawing.Point(8, 20);
+            this.lblRes.Location = new System.Drawing.Point(41, 22);
             this.lblRes.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblRes.Name = "lblRes";
             this.lblRes.Size = new System.Drawing.Size(79, 17);
@@ -443,18 +447,18 @@ namespace SubRenderer
             this.grpOutput.Controls.Add(this.label4);
             this.grpOutput.Controls.Add(this.txtSaveTo);
             this.grpOutput.Enabled = false;
-            this.grpOutput.Location = new System.Drawing.Point(16, 380);
-            this.grpOutput.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.grpOutput.Location = new System.Drawing.Point(-12, 33);
+            this.grpOutput.Margin = new System.Windows.Forms.Padding(4);
             this.grpOutput.Name = "grpOutput";
-            this.grpOutput.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.grpOutput.Size = new System.Drawing.Size(532, 146);
+            this.grpOutput.Padding = new System.Windows.Forms.Padding(4);
+            this.grpOutput.Size = new System.Drawing.Size(789, 505);
             this.grpOutput.TabIndex = 3;
             this.grpOutput.TabStop = false;
             // 
             // btnExportSub
             // 
-            this.btnExportSub.Location = new System.Drawing.Point(12, 89);
-            this.btnExportSub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnExportSub.Location = new System.Drawing.Point(44, 115);
+            this.btnExportSub.Margin = new System.Windows.Forms.Padding(4);
             this.btnExportSub.Name = "btnExportSub";
             this.btnExportSub.Size = new System.Drawing.Size(177, 50);
             this.btnExportSub.TabIndex = 6;
@@ -464,8 +468,8 @@ namespace SubRenderer
             // 
             // btnRender
             // 
-            this.btnRender.Location = new System.Drawing.Point(340, 89);
-            this.btnRender.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnRender.Location = new System.Drawing.Point(372, 115);
+            this.btnRender.Margin = new System.Windows.Forms.Padding(4);
             this.btnRender.Name = "btnRender";
             this.btnRender.Size = new System.Drawing.Size(177, 50);
             this.btnRender.TabIndex = 5;
@@ -475,8 +479,8 @@ namespace SubRenderer
             // 
             // btnBrowseOutput
             // 
-            this.btnBrowseOutput.Location = new System.Drawing.Point(417, 37);
-            this.btnBrowseOutput.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnBrowseOutput.Location = new System.Drawing.Point(449, 63);
+            this.btnBrowseOutput.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseOutput.Name = "btnBrowseOutput";
             this.btnBrowseOutput.Size = new System.Drawing.Size(100, 28);
             this.btnBrowseOutput.TabIndex = 4;
@@ -487,7 +491,7 @@ namespace SubRenderer
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(8, 20);
+            this.label4.Location = new System.Drawing.Point(40, 46);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(128, 17);
@@ -496,8 +500,8 @@ namespace SubRenderer
             // 
             // txtSaveTo
             // 
-            this.txtSaveTo.Location = new System.Drawing.Point(12, 39);
-            this.txtSaveTo.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtSaveTo.Location = new System.Drawing.Point(44, 65);
+            this.txtSaveTo.Margin = new System.Windows.Forms.Padding(4);
             this.txtSaveTo.Name = "txtSaveTo";
             this.txtSaveTo.ReadOnly = true;
             this.txtSaveTo.Size = new System.Drawing.Size(396, 22);
@@ -513,21 +517,11 @@ namespace SubRenderer
             // 
             // progressBar
             // 
-            this.progressBar.Location = new System.Drawing.Point(16, 562);
-            this.progressBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.progressBar.Location = new System.Drawing.Point(43, 75);
+            this.progressBar.Margin = new System.Windows.Forms.Padding(4);
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(1175, 28);
+            this.progressBar.Size = new System.Drawing.Size(688, 28);
             this.progressBar.TabIndex = 4;
-            // 
-            // lblProgress
-            // 
-            this.lblProgress.AutoSize = true;
-            this.lblProgress.Location = new System.Drawing.Point(12, 543);
-            this.lblProgress.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblProgress.Name = "lblProgress";
-            this.lblProgress.Size = new System.Drawing.Size(65, 17);
-            this.lblProgress.TabIndex = 5;
-            this.lblProgress.Text = "Progress";
             // 
             // dlgSave
             // 
@@ -541,7 +535,7 @@ namespace SubRenderer
             this.mnuHelp});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1207, 28);
+            this.menuStrip1.Size = new System.Drawing.Size(748, 28);
             this.menuStrip1.TabIndex = 6;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -636,21 +630,62 @@ namespace SubRenderer
             // 
             this.tmrRender.Tick += new System.EventHandler(this.tmrRender_Tick);
             // 
+            // btnCancel
+            // 
+            this.btnCancel.Location = new System.Drawing.Point(619, 545);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(113, 40);
+            this.btnCancel.TabIndex = 6;
+            this.btnCancel.Text = "&Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            // 
+            // btnNext
+            // 
+            this.btnNext.Location = new System.Drawing.Point(473, 545);
+            this.btnNext.Name = "btnNext";
+            this.btnNext.Size = new System.Drawing.Size(113, 40);
+            this.btnNext.TabIndex = 7;
+            this.btnNext.Text = "&Next >";
+            this.btnNext.UseVisualStyleBackColor = true;
+            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
+            // 
+            // btnBack
+            // 
+            this.btnBack.Enabled = false;
+            this.btnBack.Location = new System.Drawing.Point(354, 545);
+            this.btnBack.Name = "btnBack";
+            this.btnBack.Size = new System.Drawing.Size(113, 40);
+            this.btnBack.TabIndex = 8;
+            this.btnBack.Text = "< &Back";
+            this.btnBack.UseVisualStyleBackColor = true;
+            this.btnBack.Click += new System.EventHandler(this.btnBack_Click);
+            // 
+            // grpProgress
+            // 
+            this.grpProgress.Controls.Add(this.progressBar);
+            this.grpProgress.Location = new System.Drawing.Point(-12, 33);
+            this.grpProgress.Name = "grpProgress";
+            this.grpProgress.Size = new System.Drawing.Size(789, 505);
+            this.grpProgress.TabIndex = 9;
+            this.grpProgress.TabStop = false;
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1207, 606);
-            this.Controls.Add(this.lblProgress);
-            this.Controls.Add(this.progressBar);
-            this.Controls.Add(this.grpOutput);
+            this.ClientSize = new System.Drawing.Size(748, 593);
+            this.Controls.Add(this.btnBack);
+            this.Controls.Add(this.btnNext);
+            this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.grpMain);
             this.Controls.Add(this.grpInputFiles);
-            this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.grpProgress);
+            this.Controls.Add(this.grpOutput);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.Name = "frmMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -664,6 +699,7 @@ namespace SubRenderer
             this.grpOutput.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            this.grpProgress.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -708,7 +744,6 @@ namespace SubRenderer
         private System.Windows.Forms.OpenFileDialog dlgSub;
         private System.Windows.Forms.OpenFileDialog dlgVideo;
         private System.Windows.Forms.ProgressBar progressBar;
-        private System.Windows.Forms.Label lblProgress;
         private System.Windows.Forms.FolderBrowserDialog dlgSave;
         private System.Windows.Forms.ComboBox cmbFps;
         private System.Windows.Forms.Label label3;
@@ -725,6 +760,10 @@ namespace SubRenderer
         private System.Windows.Forms.ToolStripMenuItem mnuHelp;
         private System.Windows.Forms.ToolStripMenuItem mnuAbout;
         private System.Windows.Forms.Timer tmrRender;
+        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnNext;
+        private System.Windows.Forms.Button btnBack;
+        private System.Windows.Forms.GroupBox grpProgress;
     }
 }
 
