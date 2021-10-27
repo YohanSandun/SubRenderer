@@ -27,6 +27,10 @@ using System.Windows.Forms;
 using System.IO;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Resources;
 //---------------------------------------------------------------------------
 namespace SubRenderer
 {
@@ -44,7 +48,83 @@ namespace SubRenderer
 
         Graphics mGPreview = null;
 
-        Process mMkvMerge = new Process();
+        Process mMkvMerge;
+        ResourceManager res = new ResourceManager("SubRenderer.Resources.Resources", typeof(Resources.Resources).Assembly);
+        string currentLang = "";
+
+        private void SelectLanguage(string lang)
+        {
+            switch (lang)
+            {
+                case "en":
+                default:
+                    if (currentLang != "en")
+                    {
+                        res = new ResourceManager("SubRenderer.Resources.Resources", typeof(Resources.Resources).Assembly);
+                        RefreshLabels();
+                        currentLang = "en";
+                    }
+                    UncheckAllLanguages();
+                    mnuEnglish.Checked = true;
+                    break;
+                case "si":
+                    if (currentLang != "si")
+                    {
+                        res = new ResourceManager("SubRenderer.Resources.Resources_si", typeof(Resources.Resources_si).Assembly);
+                        RefreshLabels();
+                        currentLang = "si";
+                    }
+                    UncheckAllLanguages();
+                    mnuSinhala.Checked = true;
+                    break;
+                case "ta":
+                    if (currentLang != "ta")
+                    {
+                        res = new ResourceManager("SubRenderer.Resources.Resources_ta", typeof(Resources.Resources_ta).Assembly);
+                        RefreshLabels();
+                        currentLang = "ta";
+                    }
+                    UncheckAllLanguages();
+                    mnuTamil.Checked = true;
+                    break;
+            }
+        }
+
+        private void RefreshLabels()
+        {
+            btnBack.Text = res.GetString("btnBack");
+            if (step == 3)
+                btnNext.Text = res.GetString("btnFinish");
+            else
+                btnNext.Text = res.GetString("btnNext");
+            btnCancel.Text = res.GetString("btnCancel");
+            btnBrowseOutput.Text = res.GetString("btnBrowse");
+            btnBrowseSub.Text = res.GetString("btnBrowse");
+            btnBrowseVideo.Text = res.GetString("btnBrowse");
+            lblBorderCol.Text = res.GetString("lblBorderCol");
+            lblBorderSize.Text = res.GetString("lblBorderSize");
+            lblCores.Text = res.GetString("lblCores");
+            lblFont.Text = res.GetString("lblFont");
+            lblFontCol.Text = res.GetString("lblFontCol");
+            lblFontSize.Text = res.GetString("lblFontSize");
+            lblFPS.Text = res.GetString("lblFPS");
+            lblOutput.Text = res.GetString("mnuOutputDir");
+            lblSubtitle.Text = res.GetString("lblInputSub");
+            lblVideo.Text = res.GetString("lblInputVideo");
+            lblPleaseWait.Text = res.GetString("lblPleaseWait");
+            lblPosition.Text = res.GetString("lblPosition");
+            lblPreview.Text = res.GetString("lblPreview");
+            lblSubQuality.Text = res.GetString("lblSubQuality");
+            mnuAbout.Text = res.GetString("mnuAbout");
+            mnuExit.Text = res.GetString("mnuExit");
+            mnuFile.Text = res.GetString("mnuFile");
+            mnuHelp.Text = res.GetString("mnuHelp");
+            mnuLanguage.Text = res.GetString("mnuLanguage");
+            mnuSubFile.Text = res.GetString("mnuOepnSub");
+            mnuVideoFile.Text = res.GetString("mnuOpenVideo");
+            mnuSaveLoc.Text = res.GetString("mnuOutputDir");
+            mnuRender.Text = res.GetString("mnuRender");
+        }
 
         public frmMain()
         {
@@ -74,15 +154,65 @@ namespace SubRenderer
             }
         }
 
+        private void HideAll()
+        {
+            grpInputFiles.Visible = false;
+            grpMain.Visible = false;
+            grpOutput.Visible = false;
+            grpProgress.Visible = false;
+        }
+
+        private int step = 1;
+
         private void frmMain_Load(object sender, EventArgs e)
         {
-            PrepareResolutions();
+            PrepareQualities();
             PrepareFonts();
             PrepareFPS();
             PreparePreview();
+            PrepareCores();
+
+            // LoadSettigns will return the last saved language
+            SelectLanguage(LoadSettings());
+
+            this.FormClosing += FrmMain_FormClosing;
+            HideAll();
+            grpInputFiles.Visible = true;
 
             pFontCol.BackColor = mFontColor;
             pBorderCol.BackColor = mBorderColor;
+        }
+
+        private void PrepareCores()
+        {
+            int cores = Environment.ProcessorCount;
+            for (int i = 1; i <= cores; i++)
+            {
+                cmbCores.Items.Add(i.ToString());
+            }
+            if (cmbCores.Items.Count == 0)
+                cmbCores.Items.Add("1");
+            cmbCores.SelectedIndex = cmbCores.Items.Count - 1;
+        }
+
+        private void FrmMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (MessageBox.Show(res.GetString("msgAreYouSure"), res.GetString("msgCancel"), MessageBoxButtons.YesNo) == DialogResult.No)
+            {
+                e.Cancel = true;
+                return;
+            }
+            if (threads != null)
+            {
+                tmrRender.Enabled = false;
+                for (int i = 0; i < pc; i++)
+                {
+                    if (threads[i] != null)
+                        threads[i].Abort();
+                }
+                if (mMkvMerge != null && !mMkvMerge.HasExited)
+                    mMkvMerge.Close();
+            }
         }
 
         // Preparing FPS combo box.
@@ -93,17 +223,18 @@ namespace SubRenderer
             cmbFps.SelectedIndex = 0;
         }
 
-        // Preparing resolution combo box.
-        void PrepareResolutions() {
-            cmbRes.Items.AddRange(new string[] { 
-            "3840 x 2160 (4K)",
-            "2560 x 1440 (Quad HD)",
-            "1920 x 1080 (Full HD)",
-            "1280 x 720 (HD)",
-            "720 x 576 (MPEG-2 PAL)",
-            "720 x 480 (MPEG-2 NTSC)",
-            "Custom"});
-            cmbRes.SelectedIndex = 3;
+        // Preparing qualities combo box.
+       
+        void PrepareQualities()
+        {
+            cmbQuality.Items.Add("4K");
+            cmbQuality.Items.Add("QHD");
+            cmbQuality.Items.Add("FHD");
+            cmbQuality.Items.Add("HD");
+            cmbQuality.Items.Add("SD");
+            cmbQuality.SelectedIndex = 0;
+            subWidth = 3840;
+            subHeight = 2160;
         }
 
         // Preparing fonts combo box.
@@ -121,8 +252,8 @@ namespace SubRenderer
             if (cmbFont.Items.Count > 0)
                 cmbFont.SelectedIndex = fontIndex;
 
-            cmbFontSize.Items.AddRange(new string[] { "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75" });
-            cmbFontSize.SelectedIndex = 5;
+            cmbFontSize.Items.AddRange(new string[] { "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "96", "128", "150" });
+            cmbFontSize.SelectedIndex = 15;
         }
 
         // Preparing subtitle preview.
@@ -136,94 +267,60 @@ namespace SubRenderer
             if (mGPreview == null)
                 return;
 
-            mGPreview.Clear(Color.Gray);
-            int fontSize = int.Parse(cmbFontSize.SelectedItem.ToString()) / 2;
+            mGPreview.Clear(Color.White);
+            int fontSize = int.Parse(cmbFontSize.SelectedItem.ToString()) * pPreview.Height / subHeight;
             Font fontFace = new Font(cmbFont.SelectedItem.ToString(), fontSize, FontStyle.Bold);
 
             mGPreview.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             mGPreview.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             mGPreview.InterpolationMode = InterpolationMode.High;
 
-            // Following four lines are drawing out-line of the text.
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //// Following four lines are drawing out-line of the text.
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
 
-            // Drawing the actual text.
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value), mFontColor, TextFormatFlags.HorizontalCenter);
+            //// Drawing the actual text.
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value), mFontColor, TextFormatFlags.HorizontalCenter);
 
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
 
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value - fontSize), mFontColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value - fontSize), mFontColor, TextFormatFlags.HorizontalCenter);
+            
+            StringFormat stringFormat = new StringFormat();
+            stringFormat.Alignment = StringAlignment.Center;
+
+            GraphicsPath p = new GraphicsPath();
+            p.AddString(
+                txtSample.Text,
+                fontFace.FontFamily,
+                (int)FontStyle.Bold,
+                mGPreview.DpiY * fontFace.Size / 72,
+                new Point(pPreview.Width / 2, (int)((pPreview.Height - (tbPosition.Value * pPreview.Height / subHeight)) - fontFace.Size*2)),
+                stringFormat);
+            Pen pen = new Pen(mBorderColor);
+            pen.Width = tbBorderWidth.Value * pPreview.Height / subHeight;
+            mGPreview.DrawPath(pen, p);
+            Pen fpen = new Pen(mFontColor);
+            mGPreview.FillPath(fpen.Brush, p);
 
             mGPreview.Flush();
             fontFace.Dispose();
-        }
-
-        // Change width and height along with selected resolution.
-        private void cmbRes_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            switch (cmbRes.SelectedIndex) { 
-                case 0:
-                    txtWidth.Value = 3840; txtHeight.Value = 2160;
-                    break;
-                case 1:
-                    txtWidth.Value = 2560; txtHeight.Value = 1440;
-                    break;
-                case 2:
-                    txtWidth.Value = 1920; txtHeight.Value = 1080;
-                    break;
-                case 3:
-                    txtWidth.Value = 1280; txtHeight.Value = 720;
-                    break;
-                case 4:
-                    txtWidth.Value = 720; txtHeight.Value = 576;
-                    break;
-                case 5:
-                    txtWidth.Value = 720; txtHeight.Value = 480;
-                    break;
-            }
-        }
-
-        // Choose resolution by given width and height.
-        void SelectResolution(int width, int height) {
-            for (int i = 0; i < cmbRes.Items.Count; i++)
-            {
-                if (cmbRes.Items[i].ToString().StartsWith(width + " x " + height)) {
-                    cmbRes.SelectedIndex = i;
-                    return;
-                }
-            }
-            cmbRes.SelectedIndex = 6;
         }
 
         // Recalculate and set vertical position values according to current width and height 
         void SetPositionValues() {
             try
             {
-                scrPos.Maximum = txtHeight.Value - (txtHeight.Value * 90 / 720);
-                scrPos.Minimum = 100;
-                scrPos.Value = txtHeight.Value - (txtHeight.Value * 90 / 720);
+                //scrPos.Maximum = txtHeight.Value - (txtHeight.Value * 90 / 720);
+                //scrPos.Minimum = 100;
+                //scrPos.Value = txtHeight.Value - (txtHeight.Value * 90 / 720);
             }
             catch { }
-        }
-
-        private void txtWidth_TextChanged(object sender, EventArgs e)
-        {
-            SelectResolution(txtWidth.Value, txtHeight.Value);
-            SetPositionValues();
-            RefreshPreview();
-        }
-
-        private void txtHeight_TextChanged(object sender, EventArgs e)
-        {
-            SelectResolution(txtWidth.Value, txtHeight.Value);
-            SetPositionValues();
-            RefreshPreview();
         }
 
         private void pPreview_Paint(object sender, PaintEventArgs e)
@@ -272,11 +369,14 @@ namespace SubRenderer
                     txtInputVideo.Text = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mkv");
                     mVideoFile = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mkv");
                     mVideoFilePath = mVideoFile.Replace(dlgSub.SafeFileName.Replace(ext, ".mkv"), "");
+                } else if (File.Exists(mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mp4")))
+                {
+                    txtInputVideo.Text = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mp4");
+                    mVideoFile = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mp4");
+                    mVideoFilePath = mVideoFile.Replace(dlgSub.SafeFileName.Replace(ext, ".mp4"), "");
                 }
                 grpMain.Enabled = true;
                 grpOutput.Enabled = true;
-                if (mVideoFile.Trim() == "" || !File.Exists(mVideoFile))
-                    btnRender.Enabled = false;
             }
         }
 
@@ -303,7 +403,6 @@ namespace SubRenderer
                 }
                 grpMain.Enabled = true;
                 grpOutput.Enabled = true;
-                btnRender.Enabled = true;
             }
         }
 
@@ -328,249 +427,273 @@ namespace SubRenderer
         }
 
         void Render() {
-            if (mSubtitleFile.Trim() == "" | !File.Exists(mSubtitleFile))
-            {
-                MessageBox.Show("Please select a source subtitle file first!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
-            }
-            if (mVideoFile.Trim() == "" | !File.Exists(mVideoFile))
-            {
-                MessageBox.Show("Please select a source video file first!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
-            }
-            if (mWorkingDir.Trim() == "")
-            {
-                MessageBox.Show("Please select a location to save the file(s)!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
-            }
             grpInputFiles.Enabled = false;
             grpOutput.Enabled = false;
             grpMain.Enabled = false;
-            GenerateBitmaps();
-            GenerateSubFile();
-            MergeMKV();
+            HideAll();
+            grpProgress.Visible = true;
+            GenerateSubThreaded();
         }
 
-        // Generating bitmap files for each text line in subtitle.
-        void GenerateBitmaps() {
-            if (!Directory.Exists(mWorkingDir))
-                Directory.CreateDirectory(mWorkingDir);
+        private Font fontText;
+        private int subWidth, subHeight;
+        private int borderWidth = 15;
 
-            // Parse .srt file and store extracted data in SRTSegment array.
-            SRTSegment[] segments = SRTParser.Parse(mSubtitleFile);
-
-            lblProgress.Text = "Generating Bitmaps...";
-            progressBar.Maximum = segments.Length;
-
-            // Creating .son file and start writing into it.
-            StreamWriter sw = new StreamWriter(File.OpenWrite(mWorkingDir + "subrenderer.son"));
-            sw.WriteLine("Contrast	(0 15 15 15)");
-            sw.WriteLine("Display_Area	(0 " + (txtHeight.Value - (txtHeight.Value * 90 / 720)) + " " + txtWidth.Value + " 715)");
-            sw.WriteLine("Color	(0 0 2 0)");
-            bool oldTwoLines = false;
-            for (int i = 0; i < segments.Length; i++)
-            {
-                if (segments[i].TextLines.Length >= 2 && !oldTwoLines)
-                {
-                    sw.WriteLine("Display_Area	(0 " + (scrPos.Value - (30 * txtHeight.Value / 720)) + " " + txtWidth.Value + " 715)");
-                    oldTwoLines = true;
-                }
-                else
-                {
-                    if (oldTwoLines)
-                    {
-                        sw.WriteLine("Display_Area	(0 " + (scrPos.Value) + " " + txtWidth.Value + " 715)");
-                        oldTwoLines = false;
-                    }
-                }
-                sw.WriteLine(segments[i].Number + "	" + segments[i].GetStartTime() + "	" + segments[i].GetEndTime() + "	" + segments[i].Number + ".bmp");
-                GenerateBitmap(segments[i].Number, segments[i].TextLines, segments[i].IsItalic, segments[i].IsUnderline);
-                progressBar.Value++;
-                Application.DoEvents();
-            }
-            sw.Flush();
-            sw.Close();
-        }
-
-        // Create a bitmap file with given text.
-        void GenerateBitmap(string id, string[] lines, bool isItalic, bool isUnderline)
+        // Generates a bitmap with given lines
+        Bitmap GenerateBitmap(string[] lines)
         {
-            FontStyle fontStyle = FontStyle.Bold;
-            if (isItalic) fontStyle = FontStyle.Italic;
-            if (isUnderline) fontStyle = FontStyle.Underline;
-
-            Font fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), fontStyle);
-            int lineHeight = (int)(fontText.Size + (fontText.Size * 9 / 40));
+            int lineHeight = (int)(fontText.Size + fontText.Size/2) + borderWidth;
             
-            Bitmap bmp = new Bitmap(txtWidth.Value, (lines.Length * lineHeight) + 25);
+            Bitmap bmp = new Bitmap(subWidth, (lines.Length * lineHeight));
             Graphics g = Graphics.FromImage(bmp);
             g.Clear(Color.Red);
 
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.InterpolationMode = InterpolationMode.High;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+
+            StringFormat stringFormat = new StringFormat();
+            stringFormat.Alignment = StringAlignment.Center;
 
             for (int i = 0; i < lines.Length; i++)
             {
-                // Following four lines are drawing out-line of the text.
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //// Following four lines are drawing out-line of the text.
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value + 4, i * lineHeight - 2), Color.Blue, TextFormatFlags.HorizontalCenter);
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value - 4, i * lineHeight + 2), Color.Blue, TextFormatFlags.HorizontalCenter);
 
-                // Drawing the actual text.
-                TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value, i * lineHeight), Color.Black, TextFormatFlags.HorizontalCenter);
+                //// Drawing the actual text.
+                //TextRenderer.DrawText(g, lines[i], fontText, new Point(txtWidth.Value, i * lineHeight), Color.Black, TextFormatFlags.HorizontalCenter);
+
+                GraphicsPath p = new GraphicsPath();
+                p.AddString(
+                    lines[i],          
+                    fontText.FontFamily,  
+                    (int)FontStyle.Bold,     
+                    g.DpiY * fontText.Size / 72,  
+                    new Point(subWidth/2, i * lineHeight),          
+                    stringFormat);          
+                Pen pen = new Pen(Brushes.Blue);
+                pen.Width = borderWidth;
+                g.DrawPath(pen, p);
+                g.FillPath(Brushes.Black, p);
             }
 
             g.Flush();
             g.Save();
-            fontText.Dispose();
 
-            // Following section is looping though all the pixels of drawn bitmap
-            // and making darken blue pixels as pure blue pixels.
-            Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            BitmapData data = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-            byte[] rgbs = new byte[Math.Abs(data.Stride) * bmp.Height];
-            System.Runtime.InteropServices.Marshal.Copy((IntPtr)data.Scan0, rgbs, 0, rgbs.Length);
-            for (int i = 0; i < rgbs.Length; i += 4)
-            {
-                if (rgbs[i] >= 10)
-                    rgbs[i] = 255;
-            }
-            System.Runtime.InteropServices.Marshal.Copy(rgbs, 0, (IntPtr)data.Scan0, rgbs.Length);
-            bmp.UnlockBits(data);
-            bmp.Save(mWorkingDir + id + ".bmp", ImageFormat.Png); // Actually we are using png because it's small in size.
-            bmp.Dispose();
+            return bmp;
         }
 
-        long fileOffset = 0; // For tracking current offset of the .sub file.
+        private void GenerateSubThreaded()
+        {
+            SRTSegment[] segments = SRTParser.Parse(mSubtitleFile);
+
+            progressBar.Maximum = segments.Length;
+            progressBar.Value = 0;
+
+            borderWidth = tbBorderWidth.Value;
+
+            pc = int.Parse(cmbCores.SelectedItem.ToString());
+            if (pc <= 0)
+                pc = 1;
+
+            if (segments.Length <= pc * 2)
+                pc = 1;
+
+            int seg;
+            if (segments.Length % pc == 0)
+                seg = segments.Length / pc;
+            else
+                seg = (segments.Length / pc) + 1;
+
+            int[] start = new int[pc];
+            for (int i = 0; i < pc; i++)
+                start[i] = seg * i;
+
+            int[] end = new int[pc];
+            for (int i = 1; i < pc; i++)
+                end[i - 1] = start[i];
+            end[pc - 1] = segments.Length;
+
+            float fps = float.Parse(cmbFps.SelectedItem.ToString());
+
+            fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), FontStyle.Bold);
+
+            threads = new Thread[pc];
+            lists = new List<byte>[pc];
+            timeStamps = new Timestamp[pc];
+            fileOffsets = new long[pc];
+
+            for (int i = 0; i < pc; i++)
+            {
+                int index = i;
+                lists[i] = new List<byte>();
+                timeStamps[i] = new Timestamp();
+                threads[i] = new Thread(() => {
+                        GenerateSubFile(index, subHeight, subHeight, segments, start[index], end[index], lists[index], timeStamps[index], fps);
+                });
+                threads[i].Start();
+            }
+
+            tmrRender.Enabled = true;
+        }
+
+        private int pc = 1;
+        private int progress = 0;
+        private Thread[] threads;
+        private StreamWriter idxWriter;
+
+        private void tmrRender_Tick(object sender, EventArgs e)
+        {
+            bool stillRunning = false;
+            lblProgress.Text = progress + " " + res.GetString("lblImagesRendered");
+
+            for (int i = 0; i < pc; i++)
+            {
+                if (threads[i].IsAlive)
+                {
+                    stillRunning = true;
+                    break;
+                }
+            }
+            if (!stillRunning)
+            {
+                tmrRender.Enabled = false;
+
+                idxWriter = new StreamWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".idx"));
+                idxWriter.WriteLine("# VobSub index file, v7 (do not modify this line!)");
+                idxWriter.WriteLine("size: " + subWidth + "x" + subHeight);
+                idxWriter.WriteLine("org: 0, 0");
+                idxWriter.WriteLine("scale: 100%, 100%");
+                idxWriter.WriteLine("alpha: 100%");
+                idxWriter.WriteLine("smooth: OFF");
+                idxWriter.WriteLine("fadein/out: 0, 0");
+                idxWriter.WriteLine("align: OFF at LEFT TOP");
+                idxWriter.WriteLine("time offset: 0");
+                idxWriter.WriteLine("forced subs: OFF");
+                idxWriter.WriteLine("palette: " + GetColorString(mFontColor) + ", ff0000, " + GetColorString(mBorderColor) + ", ffff00, ff8000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000");
+                idxWriter.WriteLine("custom colors: OFF, tridx: 1110, colors: 808080, ffffff, 000000, 000000");
+                idxWriter.WriteLine("langidx: 0");
+                idxWriter.WriteLine("id: --, index: 0");
+
+                BinaryWriter bw = new BinaryWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".sub"));
+
+                long offset = 0;
+                for (int i = 0; i < pc; i++)
+                {
+                    idxWriter.Write(timeStamps[i].ToString(offset));
+                    offset += timeStamps[i].LastOffset;
+
+                    bw.Write(lists[i].ToArray(), 0, lists[i].Count);
+                }
+
+                idxWriter.Flush();
+                idxWriter.Close();
+
+                bw.Flush();
+                bw.Close();
+
+                lists = null;
+                timeStamps = null;
+                fileOffsets = null;
+                threads = null;
+                fontText.Dispose();
+
+                if (mVideoFile.Trim() != "" && File.Exists(mVideoFile))
+                {
+                    MergeMKV();
+                    SaveSettings();
+                }
+                else
+                {
+                    MessageBox.Show(res.GetString("msgSuccess"), res.GetString("msgDone"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    SaveSettings();
+                    Environment.Exit(0);
+                }
+            } else
+                progressBar.Value = progress;
+        }
+
+        private string LoadSettings()
+        {
+            if (Properties.Settings.Default.saved)
+            {
+                cmbFont.Text = Properties.Settings.Default.font;
+                cmbFontSize.Text = Properties.Settings.Default.fontSize.ToString();
+                mFontColor = Properties.Settings.Default.fontColor;
+                mBorderColor = Properties.Settings.Default.borderColor;
+                tbBorderWidth.Value = Properties.Settings.Default.borderSize;
+                cmbQuality.Text = Properties.Settings.Default.subQuality;
+                try
+                {
+                    dlgSave.SelectedPath = Properties.Settings.Default.lastSave;
+                }
+                catch { }
+                txtSaveTo.Text = Properties.Settings.Default.lastSave;
+                //mSaveDir = Properties.Settings.Default.lastSave;
+                //mWorkingDir = Properties.Settings.Default.lastSave;
+                pBorderCol.BackColor = mBorderColor;
+                pFontCol.BackColor = mFontColor;
+                return Properties.Settings.Default.lang;
+            }
+            return "en";
+        }
+
+        private void SaveSettings()
+        {
+            Properties.Settings.Default.font = cmbFont.SelectedItem.ToString();
+            Properties.Settings.Default.fontSize = int.Parse(cmbFontSize.SelectedItem.ToString());
+            Properties.Settings.Default.fontColor = mFontColor;
+            Properties.Settings.Default.borderColor = mBorderColor;
+            Properties.Settings.Default.borderSize = tbBorderWidth.Value;
+            Properties.Settings.Default.subQuality = cmbQuality.SelectedItem.ToString();
+            Properties.Settings.Default.lastSave = mSaveDir;
+            Properties.Settings.Default.saved = true;
+            Properties.Settings.Default.lang = currentLang;
+            Properties.Settings.Default.Save();
+        }
+
+        // Byte lists fo reach thread to store data.
+        private List<byte>[] lists;
+
+        // Timestamps for each thread
+        private Timestamp[] timeStamps;
+
+        // File offsets for each thread
+        private long[] fileOffsets;
+
+        private int subPosition = 0;
 
         // Generaing the .sub and .idx files.
-        void GenerateSubFile() {
-            lblProgress.Text = "Merging bitmaps...";
+        void GenerateSubFile(int fos, int width, int height, SRTSegment[] segments, int start, int end, List<byte> list, Timestamp sb, float fps) {
             long offset = 0;			
             long timefrom;
             long timeto;
-            int width = txtWidth.Value;
-            int height = txtHeight.Value;
-            float fps = float.Parse(cmbFps.SelectedItem.ToString());
-            int x = 0;
-            int y = 0;
-            int[] palette = new int[16];
-            char[] fileline = new char[4096];
-            byte cont1 = 0;
-            byte cont2 = 0;
-            byte col1 = 0;
-            byte col2 = 0;
-            int c1, c2, c3, c4, c5, c6, c7, c8, c9;
-            c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 0;
-            string fileName = "";
 
-            string[] sonLines = File.ReadAllLines(mWorkingDir + "subrenderer.son");
-
-            // Creating .sub file and start writing into it.
-            BinaryWriter bw = new BinaryWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".sub"));
-            // Creating .idx file and start writing into it.
-            StreamWriter sw = new StreamWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".idx"));
-            
-            sw.WriteLine("# VobSub index file, v7 (do not modify this line!)");
-            sw.WriteLine("size: " + txtWidth.Value + "x" + txtHeight.Value);
-            sw.WriteLine("org: 0, 0");
-            sw.WriteLine("scale: 100%, 100%");
-            sw.WriteLine("alpha: 100%");
-            sw.WriteLine("smooth: OFF");
-            sw.WriteLine("fadein/out: 0, 0");
-            sw.WriteLine("align: OFF at LEFT TOP");
-            sw.WriteLine("time offset: 0");
-            sw.WriteLine("forced subs: OFF");
-            sw.WriteLine("palette: " + GetColorString(mFontColor) + ", ff0000, " + GetColorString(mBorderColor) + ", ffff00, ff8000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000");
-            sw.WriteLine("custom colors: OFF, tridx: 1110, colors: 808080, ffffff, 000000, 000000");
-            sw.WriteLine("langidx: 0");
-            sw.WriteLine("id: --, index: 0");
-
-            progressBar.Maximum = sonLines.Length;
-            progressBar.Value = 0;
-
-            foreach (string l in sonLines)
+            for (int i = start; i < end; i++)
             {
-                string line = l.Trim();
-                c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 0;
-                if (line.StartsWith("Contrast"))
-                {
-                    string[] data = line.Replace("Contrast", "").Replace("(", "").Replace(")", "").Trim().Split(' ');
-                    c1 = int.Parse(data[0]);
-                    c2 = int.Parse(data[1]);
-                    c3 = int.Parse(data[2]);
-                    c4 = int.Parse(data[3]);
-                    cont1 = (byte)(16 * c4 + c3);
-                    cont2 = (byte)(16 * c1 + c2);
-                }
-                else if (line.StartsWith("Display_Area"))
-                {
-                    string[] data = line.Replace("Display_Area", "").Replace("(", "").Replace(")", "").Trim().Split(' ');
-                    x = int.Parse(data[0]);
-                    y = int.Parse(data[1]);
-                    c3 = int.Parse(data[2]);
-                    c4 = int.Parse(data[3]);
-                }
-                else if (line.StartsWith("Color"))
-                {
-                    string[] data = line.Replace("Color", "").Replace("(", "").Replace(")", "").Trim().Split(' ');
-                    c1 = int.Parse(data[0]);
-                    c2 = int.Parse(data[1]);
-                    c3 = int.Parse(data[2]);
-                    c4 = int.Parse(data[3]);
-                    col1 = (byte)(16 * c4 + c3);
-                    col2 = (byte)(16 * c1 + c2);
-                }
-                else if (line.Trim().EndsWith(".bmp"))
-                {
-                    string[] data = line.Trim().Split('	');
-                    c1 = int.Parse(data[0]);
+                int[] startTime = segments[i].GetStartTimeArray();
+                int[] endTime = segments[i].GetEndTimeArray();
 
-                    string[] startTime = data[1].Trim().Split(':');
-                    c2 = int.Parse(startTime[0]);
-                    c3 = int.Parse(startTime[1]);
-                    c4 = int.Parse(startTime[2]);
-                    c5 = int.Parse(startTime[3]);
+                timefrom = (long)((startTime[0] * 3600000) + (startTime[1] * 60000) + (startTime[2] * 1000) + (1.0f * startTime[3] * 1000 / fps));
+                timeto = (long)((endTime[0] * 3600000) + (endTime[1] * 60000) + (endTime[2] * 1000) + (1.0f * endTime[3] * 1000 / fps));
+                
+                sb.WriteLine("timestamp: " + GetNumberString((timefrom) / 3600000, 2) + ":" + GetNumberString(((timefrom) / 60000) % 60, 2) + ":" + GetNumberString(((timefrom) / 1000) % 60, 2) + ":" + GetNumberString((timefrom) % 1000, 3) + ", filepos: ", offset);
 
-                    string[] endTime = data[2].Trim().Split(':');
-                    c6 = int.Parse(endTime[0]);
-                    c7 = int.Parse(endTime[1]);
-                    c8 = int.Parse(endTime[2]);
-                    c9 = int.Parse(endTime[3]);
+                Bitmap bmp = GenerateBitmap(segments[i].TextLines);
 
-                    fileName = mWorkingDir + data[3].Trim();
-
-                    timefrom = (long)((c2 * 3600000) + (c3 * 60000) + (c4 * 1000) + (1.0f * c5 * 1000 / fps));
-                    timeto = (long)((c6 * 3600000) + (c7 * 60000) + (c8 * 1000) + (1.0f * c9 * 1000 / fps));
-                    
-                    sw.WriteLine("timestamp: " + GetNumberString((timefrom) / 3600000, 2) + ":" + GetNumberString(((timefrom) / 60000) % 60, 2) + ":" + GetNumberString(((timefrom) / 1000) % 60, 2) + ":" + GetNumberString((timefrom) % 1000, 3) + ", filepos: " + GetHexNumberString(offset, 9));
-
-                    Bitmap bmp = new Bitmap(fileName);
-
-                    // Time used here is in 1/90000th second
-                    offset += DumpSub(bmp, width, height, x, y, timefrom * 90, (timeto - timefrom) * 90, col1, col2, cont1, cont2, bw);
-                    bmp.Dispose();
-                }
-                progressBar.Value++;
-                Application.DoEvents();
+                // Time used here is in 1/90000th second
+                offset += DumpSub(fos, bmp, width, height, 0, height - subPosition, timefrom * 90, (timeto - timefrom) * 90, 2, 0, 255, 15, list);
+                bmp.Dispose();
+                
+                progress++;
             }
-            bw.Flush();
-            bw.Close();
+            sb.LastOffset = offset;
 
-            sw.Flush();
-            sw.Close();
-
-            // Removing created temp files and bitmaps.
-            try
-            {
-                DirectoryInfo dInfo = new DirectoryInfo(mWorkingDir);
-                foreach (FileInfo file in dInfo.GetFiles())
-                    file.Delete();
-                dInfo.Delete(true);
-            }
-            catch { }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         // Returns a horizontal pixel line from given bitmap. 
@@ -600,7 +723,7 @@ namespace SubRenderer
         // The VobSub v7 sub file is really a stripped VOB containing
         // only the subtitle related blocks, so we have to emulate the
         // MPEG2 packet structure and the Subpicture format.
-        long DumpSub(Bitmap bmp, long width, long height, long x1, long y1, long timestart, long timelength, byte col1, byte col2, byte cont1, byte cont2, BinaryWriter bw)
+        long DumpSub(int fos, Bitmap bmp, long width, long height, long x1, long y1, long timestart, long timelength, byte col1, byte col2, byte cont1, byte cont2, List<byte> bw)
         {
             long i, n, y;
             byte[] spu = new byte[width * height + 50]; // Create the SPU (Sub Picture Unit)
@@ -614,14 +737,14 @@ namespace SubRenderer
             for (y = 0; y < bmp.Height; y += 2)
             {
                 // Process field1
-                fileOffset = 4 + field1size;
-                field1size += RLELineEncode(ref spu, ScanLine(data, y), bmp.Width);
+                fileOffsets[fos] = 4 + field1size;
+                field1size += RLELineEncode(fos, ref spu, ScanLine(data, y), bmp.Width);
             }
             for (y = 1; y < bmp.Height; y += 2)
             {
                 // Process field2
-                fileOffset = 4 + field1size + field2size;
-                field2size += RLELineEncode(ref spu, ScanLine(data, y), bmp.Width);
+                fileOffsets[fos] = 4 + field1size + field2size;
+                field2size += RLELineEncode(fos, ref spu, ScanLine(data, y), bmp.Width);
             }
             bmp.UnlockBits(data);
 
@@ -636,32 +759,32 @@ namespace SubRenderer
 
             // Control Header (DCSQT)
             // 1st Display Control Sequence (DCSQ)
-            spu[offset + 0] = (byte)0x00;			// Start Time in (1024/90000)th sec (byte 1)
-            spu[offset + 1] = (byte)0x00;			// Start Time in (1024/90000)th sec (byte 2)
+            spu[offset + 0] = 0x00;			// Start Time in (1024/90000)th sec (byte 1)
+            spu[offset + 1] = 0x00;			// Start Time in (1024/90000)th sec (byte 2)
             n = offset + 24;
             spu[offset + 2] = (byte)(n / 0x100);	// Offset to next DCSQ (byte 1)
             spu[offset + 3] = (byte)(n % 0x100);	// Offset to next DCSQ (byte 2)
-            spu[offset + 4] = (byte)0x03;			// DCC 03 = Set Colors
-            spu[offset + 5] = (byte)col1;			// Palette for the 4 colors (byte 1)
-            spu[offset + 6] = (byte)col2;			// Palette for the 4 colors (byte 2)
-            spu[offset + 7] = (byte)0x04;			// DCC 04 = Set Contrast
-            spu[offset + 8] = (byte)cont1;			// Transparency values for the 4 colors (byte 1)
-            spu[offset + 9] = (byte)cont2;			// Transparency values for the 4 colors (byte 2)
-            spu[offset + 10] = (byte)0x05;			// DCC 05 = Set Position
+            spu[offset + 4] = 0x03;			// DCC 03 = Set Colors
+            spu[offset + 5] = col1;			// Palette for the 4 colors (byte 1)
+            spu[offset + 6] = col2;			// Palette for the 4 colors (byte 2)
+            spu[offset + 7] = 0x04;			// DCC 04 = Set Contrast
+            spu[offset + 8] = cont1;			// Transparency values for the 4 colors (byte 1)
+            spu[offset + 9] = cont2;			// Transparency values for the 4 colors (byte 2)
+            spu[offset + 10] = 0x05;			// DCC 05 = Set Position
             spu[offset + 11] = (byte)(x1 / 0x10);									// X1a X1b
             spu[offset + 12] = (byte)((x1 % 0x10) * 0x10 + ((x1 + bmp.Width) / 0x100));	// X1c X2a
             spu[offset + 13] = (byte)((x1 + bmp.Width) % 0x100);					// X2b X2c
             spu[offset + 14] = (byte)(y1 / 0x10);									// Y1a Y1b (reverse the lines)
             spu[offset + 15] = (byte)((y1 % 0x10) * 0x10 + ((y1 + bmp.Height) / 0x100)); // Y1c Y2a (reverse the lines)
             spu[offset + 16] = (byte)((y1 + bmp.Height) % 0x100); // Y2b Y2c (reverse the lines)
-            spu[offset + 17] = (byte)0x06;			// DCC 06 = Set PX fields offsets
-            spu[offset + 18] = (byte)0x00;			// Offset for first PX field (byte 1)
-            spu[offset + 19] = (byte)0x04;			// Offset for first PX field (byte 2)
+            spu[offset + 17] = 0x06;			// DCC 06 = Set PX fields offsets
+            spu[offset + 18] = 0x00;			// Offset for first PX field (byte 1)
+            spu[offset + 19] = 0x04;			// Offset for first PX field (byte 2)
             n = 4 + field1size;
             spu[offset + 20] = (byte)(n / 0x100);	// Offset for second PX field (byte 1)
             spu[offset + 21] = (byte)(n % 0x100);	// Offset for second PX field (byte 2)
-            spu[offset + 22] = (byte)0x01;			// DCC 01 = Start Display
-            spu[offset + 23] = (byte)0xFF;			// DCC FF = End of Command
+            spu[offset + 22] = 0x01;			// DCC 01 = Start Display
+            spu[offset + 23] = 0xFF;			// DCC FF = End of Command
 
             // 2nd Display Control Sequence (DCSQ)
             n = timelength / 1024;
@@ -670,8 +793,8 @@ namespace SubRenderer
             n = offset + 24;
             spu[offset + 26] = (byte)(n / 0x100);	// Offset to next DCSQ (itself) (byte 1)
             spu[offset + 27] = (byte)(n % 0x100);	// Offset to next DCSQ (itself) (byte 2)
-            spu[offset + 28] = (byte)0x02;			// DCC 02 = End Display
-            spu[offset + 29] = (byte)0xFF;
+            spu[offset + 28] = 0x02;			// DCC 02 = End Display
+            spu[offset + 29] = 0xFF;
 
             // Building & Dumping the Program Stream (PS) packets
             byte[] pspes = new byte[30];
@@ -687,52 +810,52 @@ namespace SubRenderer
 
             // Building PS Header
             pspes[0] = 0x00;
-            pspes[1] = (byte)0x00;
-            pspes[2] = (byte)0x01;
-            pspes[3] = (byte)0xba;
-            pspes[4] = (byte)0x44;  // dummy header to fool mkvmerge
-            pspes[5] = (byte)0x02;
-            pspes[6] = (byte)0xc4;
-            pspes[7] = (byte)0x82;
-            pspes[8] = (byte)0x04;
-            pspes[9] = (byte)0xa9;
-            pspes[10] = (byte)0x01;
-            pspes[11] = (byte)0x89;
-            pspes[12] = (byte)0xc3;
-            pspes[13] = (byte)0xf8;
+            pspes[1] = 0x00;
+            pspes[2] = 0x01;
+            pspes[3] = 0xba;
+            pspes[4] = 0x44;  // dummy header to fool mkvmerge
+            pspes[5] = 0x02;
+            pspes[6] = 0xc4;
+            pspes[7] = 0x82;
+            pspes[8] = 0x04;
+            pspes[9] = 0xa9;
+            pspes[10] = 0x01;
+            pspes[11] = 0x89;
+            pspes[12] = 0xc3;
+            pspes[13] = 0xf8;
             // Building PES (Packetized Elementary Stream) Header : Private_Stream_1
-            pspes[14] = (byte)0x00;
-            pspes[15] = (byte)0x00;
-            pspes[16] = (byte)0x01;
-            pspes[17] = (byte)0xbd;
-            pspes[20] = (byte)0x81;
+            pspes[14] = 0x00;
+            pspes[15] = 0x00;
+            pspes[16] = 0x01;
+            pspes[17] = 0xbd;
+            pspes[20] = 0x81;
 
             while (pos < spusize)
             {
                 npackets++;
                 if (npackets == 1)
                 {
-                    pspes[21] = (byte)0x80;	// 0x80 for first packet, 0x00 for the others
-                    pspes[22] = (byte)0x05;	// 0x05 for first packet, 0x00 for the others
+                    pspes[21] = 0x80;	// 0x80 for first packet, 0x00 for the others
+                    pspes[22] = 0x05;	// 0x05 for first packet, 0x00 for the others
                     pspes[23] = (byte)((timestart >> 29) | 0x21);	// 0x20 for subtitles + TimeStamp (byte 1 - 4 first bits) + Marker(1)
                     pspes[24] = (byte)((timestart >> 22) & 0xFF);	// TimeStamp (byte 2)
                     pspes[25] = (byte)(((timestart >> 14) & 0xFF) | 1);	// TimeStamp (byte 3) + Marker(1)
                     pspes[26] = (byte)((timestart >> 7) & 0xFF);	// TimeStamp (byte 4)
                     pspes[27] = (byte)(((timestart << 1) & 0xFF) | 1);	// TimeStamp (byte 5) + Marker(1)
-                    pspes[28] = (byte)0x20;	// Subtitle Id (0x20+id)
+                    pspes[28] = 0x20;	// Subtitle Id (0x20+id)
                     headersize = 29;
                 }
                 else
                 {
-                    pspes[21] = (byte)0x00;
-                    pspes[22] = (byte)0x00;
-                    pspes[23] = (byte)0x20;	// 0x20 for subtitles
+                    pspes[21] = 0x00;
+                    pspes[22] = 0x00;
+                    pspes[23] = 0x20;	// 0x20 for subtitles
                     headersize = 24;
                 }
 
                 spublock = new byte[spu.Length - pos];
                 for (int z = (int)pos; z < spu.Length; z++)
-                    spublock[z - pos] = (byte)spu[z];
+                    spublock[z - pos] = spu[z];
 
                 // Splitting the SPU block
                 if ((spusize - pos) > (0x800 - headersize))
@@ -762,30 +885,35 @@ namespace SubRenderer
                 n = (headersize - 20) + spublocksize;
                 pspes[18] = (byte)(n / 0x100); // Size of the PES (byte 1)
                 pspes[19] = (byte)(n % 0x100); // Size of the PES (byte 2)
-                bw.Write(pspes, 0, (int)headersize);
-                bw.Write(spublock, 0, (int)spublocksize);
+
+                for (int pspes_i = 0; pspes_i < (int)headersize; pspes_i++)
+                    bw.Add(pspes[pspes_i]);
+                for (int spublock_i = 0; spublock_i < (int)spublocksize; spublock_i++)
+                    bw.Add(spublock[spublock_i]);
+                //bw.AddRange(pspes, 0, (int)headersize);
+                //bw.Write(spublock, 0, (int)spublocksize);
 
                 if (padding)
                 {
                     // Packetized Elementary Stream (PES) : Padding
-                    bw.Write((byte)0x00);
-                    bw.Write((byte)0x00);
-                    bw.Write((byte)0x01);
-                    bw.Write((byte)0xbe);
-                    bw.Write((byte)(paddingsize / 0x100)); // Padding Size (byte 1)
-                    bw.Write((byte)(paddingsize % 0x100)); // Padding Size (byte 2)
+                    bw.Add(0x00);
+                    bw.Add(0x00);
+                    bw.Add(0x01);
+                    bw.Add(0xbe);
+                    bw.Add((byte)(paddingsize / 0x100)); // Padding Size (byte 1)
+                    bw.Add((byte)(paddingsize % 0x100)); // Padding Size (byte 2)
                     for (i = 0; i < paddingsize; i++) 
-                        bw.Write((byte)255); // Padding bits
+                        bw.Add(255); // Padding bits
                 }
             }
             return npackets * 0x800;
         }
 
         // Dump a nibble in a buffer (Part of RLE processing)
-        void DumpNibble(byte value, ref byte[] rle, ref long size, ref byte pos)
+        void DumpNibble(int fos, byte value, ref byte[] rle, ref long size, ref byte pos)
         {
             byte shift = (byte)(6 - (2 * (pos)));
-            rle[size + fileOffset] = (byte)((rle[size + fileOffset] & (0xFC << shift)) | (value << shift));
+            rle[size + fileOffsets[fos]] = (byte)((rle[size + fileOffsets[fos]] & (0xFC << shift)) | (value << shift));
             if ((pos) == 3)
             {
                 (size)++;
@@ -795,7 +923,7 @@ namespace SubRenderer
         }
 
         // Run Length Encode (RLE) a (previously analyzed) line
-        long RLELineEncode(ref byte[] rleline, int[] srcline, long width)
+        long RLELineEncode(int fos, ref byte[] rleline, int[] srcline, long width)
         {
             byte pos = 0;
             long size = 0;
@@ -826,14 +954,14 @@ namespace SubRenderer
                         cpx = cpx % 255;
                         for (i = 0; i < n; i++)
                         {
-                            DumpNibble(0, ref rleline, ref size, ref pos);
-                            DumpNibble(0, ref rleline, ref size, ref pos);
-                            DumpNibble(0, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(3, ref rleline, ref size, ref pos);
-                            DumpNibble(opx, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 0, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 0, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 0, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, 3, ref rleline, ref size, ref pos);
+                            DumpNibble(fos, opx, ref rleline, ref size, ref pos);
                         }
                     }
                     if (cpx > 63) n = 3;
@@ -841,18 +969,18 @@ namespace SubRenderer
                     else if (cpx > 3) n = 1;
                     else n = 0;
                     for (i = 0; i < n; i++)
-                        DumpNibble(0, ref rleline, ref size, ref pos);
+                        DumpNibble(fos, 0, ref rleline, ref size, ref pos);
                     for (i = n; i >= 0; i--)
-                        DumpNibble((byte)((cpx >> (int)(i * 2)) & 0x03), ref rleline, ref size, ref pos);
-                    DumpNibble(opx, ref rleline, ref size, ref pos);
+                        DumpNibble(fos, (byte)((cpx >> (int)(i * 2)) & 0x03), ref rleline, ref size, ref pos);
+                    DumpNibble(fos, opx, ref rleline, ref size, ref pos);
                     cpx = 1;
                 }
                 opx = px;
             }
 
             for (i = 0; i < 7; i++)
-                DumpNibble(0, ref rleline, ref size, ref pos);
-            DumpNibble(opx, ref rleline, ref size, ref pos); // dump pixel
+                DumpNibble(fos, 0, ref rleline, ref size, ref pos);
+            DumpNibble(fos, opx, ref rleline, ref size, ref pos); // dump pixel
 
             if (pos != 0)
                 size++;
@@ -864,7 +992,8 @@ namespace SubRenderer
         void MergeMKV() {
             progressBar.Maximum = 100;
             progressBar.Value = 0;
-            lblProgress.Text = "Generating MKV file...";
+            lblProgress.Text = res.GetString("msgMkv");
+            mMkvMerge = new Process();
 
             mMkvMerge.EnableRaisingEvents = true;
             mMkvMerge.OutputDataReceived += mMkvMerge_OutputDataReceived;
@@ -886,7 +1015,7 @@ namespace SubRenderer
         void mMkvMerge_Exited(object sender, EventArgs e)
         {
             Invoke(new Action(() => { 
-                MessageBox.Show("MKV file exported successfully!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(res.GetString("msgSuccess"), res.GetString("msgDone"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 Environment.Exit(1);
             }));
         }
@@ -894,7 +1023,7 @@ namespace SubRenderer
         void mMkvMerge_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             Invoke(new Action(() => {
-                MessageBox.Show("Error while merging the mkv file!\n" + e.Data, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(e.Data, res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 Environment.Exit(1);
             }));
         }
@@ -921,25 +1050,25 @@ namespace SubRenderer
         }
 
         // Convert number in to hex string
-        string GetHexNumberString(long number, int count)
+        public static string GetHexNumberString(long number, int count)
         {
             string hex = Convert.ToString(number, 16);
             return GetZeros(count - hex.Length) + hex;
         }
 
-        string GetNumberString(long number, int count)
+        public static string GetNumberString(long number, int count)
         {
             return GetZeros(count - number.ToString().Length) + number;
         }
 
-        string GetColorString(Color col)
+        public static string GetColorString(Color col)
         {
             string str = Convert.ToString(col.ToArgb() & 0x00ffffff, 16);
             str = GetZeros(6 - str.Length) + str;
             return str;
         }
 
-        string GetZeros(int count)
+        public static string GetZeros(int count)
         {
             string str = "";
             for (int i = 0; i < count; i++) str += "0";
@@ -952,27 +1081,37 @@ namespace SubRenderer
         }
 
         void ExportSubOnly() {
-            if (mSubtitleFile.Trim() == "" | !File.Exists(mSubtitleFile))
+            if (mSubtitleFile.Trim() == "" || !File.Exists(mSubtitleFile))
             {
-                MessageBox.Show("Please select a source subtitle file first!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(res.GetString("msgErrorSub"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             if (mWorkingDir.Trim() == "")
             {
-                MessageBox.Show("Please select a location to save the file(s)!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(res.GetString("msgErrorOutput"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             grpInputFiles.Enabled = false;
             grpOutput.Enabled = false;
             grpMain.Enabled = false;
-            GenerateBitmaps();
-            GenerateSubFile();
-            MessageBox.Show("Subtitle generated successfully!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            //GenerateBitmaps();
+            //GenerateSubFile();
+            MessageBox.Show(res.GetString("msgSuccess"), res.GetString("msgDone"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             Environment.Exit(1);
         }
 
         private void mnuRender_Click(object sender, EventArgs e)
         {
+            if (mSubtitleFile.Trim() == "" || !File.Exists(mSubtitleFile))
+            {
+                MessageBox.Show(res.GetString("msgErrorSub"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+            if (mWorkingDir.Trim() == "")
+            {
+                MessageBox.Show(res.GetString("msgErrorOutput"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
             Render();
         }
 
@@ -983,7 +1122,7 @@ namespace SubRenderer
 
         private void mnuExit_Click(object sender, EventArgs e)
         {
-            Environment.Exit(1);
+            Cancel();
         }
 
         private void mnuSubFile_Click(object sender, EventArgs e)
@@ -1007,6 +1146,196 @@ namespace SubRenderer
             about.ShowDialog();
         }
 
+        private void btnNext_Click(object sender, EventArgs e)
+        {
+            
+            if (step < 4)
+            {
+                if (step == 1)
+                {
+                    if (mSubtitleFile.Trim() == "" || !File.Exists(mSubtitleFile))
+                    {
+                        MessageBox.Show(res.GetString("msgErrorSub"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        return;
+                    }
+                } else if (step == 3)
+                {
+                    if (mWorkingDir.Trim() == "")
+                    {
+                        MessageBox.Show(res.GetString("msgErrorOutput"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        return;
+                    }
+                }
+                btnBack.Enabled = true;
+                step++;
+                HideAll();
+                if (step == 2)
+                    grpMain.Visible = true;
+                else if (step == 3)
+                {
+                    grpOutput.Visible = true;
+                    btnNext.Text = res.GetString("btnFinish");
+                }
+                else if (step == 4)
+                {
+                    btnNext.Enabled = false;
+                    btnBack.Enabled = false;
+                    Render();
+                }
+            }
+        }
+
+
+        private void cmbQuality_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cmbQuality.SelectedItem.ToString())
+            {
+                case "SD":
+                    subWidth = 640;
+                    subHeight = 480;
+                    tbPosition.Maximum = 480;
+                    break;
+                case "HD":
+                    subWidth = 1280;
+                    subHeight = 720;
+                    tbPosition.Maximum = 720;
+                    break;
+                case "FHD":
+                    subWidth = 1920;
+                    subHeight = 1080;
+                    tbPosition.Maximum = 1080;
+                    break;
+                case "QHD":
+                    subWidth = 2560;
+                    subHeight = 1440;
+                    tbPosition.Maximum = 1440;
+                    break;
+                case "4K":
+                    subWidth = 3840;
+                    subHeight = 2160;
+                    tbPosition.Maximum = 2160;
+                    break;
+                case "8K":
+                    subWidth = 7680;
+                    subHeight = 4320;
+                    tbPosition.Maximum = 4320;
+                    break;
+                default:
+                    subWidth = 3840;
+                    subHeight = 2160;
+                    tbPosition.Maximum = 2160;
+                    break;
+            }
+            tbPosition.Value = 0;
+            RefreshPreview();
+        }
+
+        private void tbPosition_Scroll(object sender, EventArgs e)
+        {
+            subPosition = tbPosition.Value;
+            RefreshPreview();
+        }
+
+        private void tbBorderWidth_Scroll(object sender, EventArgs e)
+        {
+            RefreshPreview();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            Cancel();
+        }
+
+        private void Cancel()
+        {
+            if (MessageBox.Show(res.GetString("msgAreYouSure"), res.GetString("msgCancel"), MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                if (threads != null)
+                {
+                    tmrRender.Enabled = false;
+                    for (int i = 0; i < pc; i++)
+                    {
+                        if (threads[i] != null)
+                            threads[i].Abort();
+                    }
+                    if (mMkvMerge != null && !mMkvMerge.HasExited)
+                        mMkvMerge.Close();
+                }
+                Environment.Exit(0);
+            }
+        }
+
+        private void UncheckAllLanguages()
+        {
+            mnuEnglish.Checked = false;
+            mnuSinhala.Checked = false;
+            mnuTamil.Checked = false;  
+        }
+
+        private void mnuEnglish_Click(object sender, EventArgs e)
+        {
+            SelectLanguage("en");
+        }
+
+        private void mnuSinhala_Click(object sender, EventArgs e)
+        {
+            SelectLanguage("si");
+        }
+
+        private void mnuTamil_Click(object sender, EventArgs e)
+        {
+            SelectLanguage("ta");
+        }
+
+        private void mnuRestore_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show(res.GetString("msgAreYouSure"), "Restore Defaults", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                SelectLanguage("en");
+                mWorkingDir = "";
+                mSaveDir = "";
+                txtSaveTo.Text = "";
+                cmbFps.SelectedIndex = 0;
+                cmbQuality.SelectedIndex = 0;
+                subWidth = 3840;
+                subHeight = 2160;
+                cmbFontSize.SelectedIndex = 15;
+                mBorderColor = Color.Black;
+                mFontColor = Color.White;
+                pBorderCol.BackColor = mBorderColor;
+                tbBorderWidth.Value = 15;
+                tbPosition.Value = 0;
+                pFontCol.BackColor = mFontColor;
+                for (int i = 0; i < cmbFont.Items.Count; i++)
+                {
+                    if (cmbFont.Items[i].ToString() == "Iskoola Pota")
+                    {
+                        cmbFont.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void btnBack_Click(object sender, EventArgs e)
+        {
+            if (step > 1)
+            {
+                btnNext.Enabled = true;
+                btnNext.Text = res.GetString("btnNext");
+                step--;
+                HideAll();
+                if (step == 1)
+                {
+                    grpInputFiles.Visible = true;
+                    btnBack.Enabled = false;
+                }
+                else if (step == 2)
+                    grpMain.Visible = true;
+                else if (step == 3)
+                    grpOutput.Visible = true;
+            } 
+        }
     }
 }
 //---------------------------------------------------------------------------

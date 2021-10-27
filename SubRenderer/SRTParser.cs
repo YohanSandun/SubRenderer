@@ -68,6 +68,30 @@ namespace SubRenderer
             return nums[0] + ":" + (i < 10 ? "0" + i : i + "");
         }
 
+        public int[] GetStartTimeArray()
+        {
+            int[] array = new int[4];
+            string[] nums = StartTime.Trim().Split(',');
+            array[3] = (int.Parse(nums[1]) * 24) / 1000;
+            string[] nums1 = nums[0].Split(':');
+            array[0] = int.Parse(nums1[0]);
+            array[1] = int.Parse(nums1[1]);
+            array[2] = int.Parse(nums1[2]);
+            return array;
+        }
+
+        public int[] GetEndTimeArray()
+        {
+            int[] array = new int[4];
+            string[] nums = EndTime.Trim().Split(',');
+            array[3] = (int.Parse(nums[1]) * 24) / 1000;
+            string[] nums1 = nums[0].Split(':');
+            array[0] = int.Parse(nums1[0]);
+            array[1] = int.Parse(nums1[1]);
+            array[2] = int.Parse(nums1[2]);
+            return array;
+        }
+
         public string GetEndTime()
         {
             string[] nums = EndTime.Trim().Split(',');
