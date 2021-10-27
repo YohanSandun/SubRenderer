@@ -30,6 +30,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Resources;
 //---------------------------------------------------------------------------
 namespace SubRenderer
 {
@@ -47,7 +48,83 @@ namespace SubRenderer
 
         Graphics mGPreview = null;
 
-        Process mMkvMerge = new Process();
+        Process mMkvMerge;
+        ResourceManager res = new ResourceManager("SubRenderer.Resources.Resources", typeof(Resources.Resources).Assembly);
+        string currentLang = "";
+
+        private void SelectLanguage(string lang)
+        {
+            switch (lang)
+            {
+                case "en":
+                default:
+                    if (currentLang != "en")
+                    {
+                        res = new ResourceManager("SubRenderer.Resources.Resources", typeof(Resources.Resources).Assembly);
+                        RefreshLabels();
+                        currentLang = "en";
+                    }
+                    UncheckAllLanguages();
+                    mnuEnglish.Checked = true;
+                    break;
+                case "si":
+                    if (currentLang != "si")
+                    {
+                        res = new ResourceManager("SubRenderer.Resources.Resources_si", typeof(Resources.Resources_si).Assembly);
+                        RefreshLabels();
+                        currentLang = "si";
+                    }
+                    UncheckAllLanguages();
+                    mnuSinhala.Checked = true;
+                    break;
+                case "ta":
+                    if (currentLang != "ta")
+                    {
+                        res = new ResourceManager("SubRenderer.Resources.Resources_ta", typeof(Resources.Resources_ta).Assembly);
+                        RefreshLabels();
+                        currentLang = "ta";
+                    }
+                    UncheckAllLanguages();
+                    mnuTamil.Checked = true;
+                    break;
+            }
+        }
+
+        private void RefreshLabels()
+        {
+            btnBack.Text = res.GetString("btnBack");
+            if (step == 3)
+                btnNext.Text = res.GetString("btnFinish");
+            else
+                btnNext.Text = res.GetString("btnNext");
+            btnCancel.Text = res.GetString("btnCancel");
+            btnBrowseOutput.Text = res.GetString("btnBrowse");
+            btnBrowseSub.Text = res.GetString("btnBrowse");
+            btnBrowseVideo.Text = res.GetString("btnBrowse");
+            lblBorderCol.Text = res.GetString("lblBorderCol");
+            lblBorderSize.Text = res.GetString("lblBorderSize");
+            lblCores.Text = res.GetString("lblCores");
+            lblFont.Text = res.GetString("lblFont");
+            lblFontCol.Text = res.GetString("lblFontCol");
+            lblFontSize.Text = res.GetString("lblFontSize");
+            lblFPS.Text = res.GetString("lblFPS");
+            lblOutput.Text = res.GetString("mnuOutputDir");
+            lblSubtitle.Text = res.GetString("lblInputSub");
+            lblVideo.Text = res.GetString("lblInputVideo");
+            lblPleaseWait.Text = res.GetString("lblPleaseWait");
+            lblPosition.Text = res.GetString("lblPosition");
+            lblPreview.Text = res.GetString("lblPreview");
+            lblSubQuality.Text = res.GetString("lblSubQuality");
+            mnuAbout.Text = res.GetString("mnuAbout");
+            mnuExit.Text = res.GetString("mnuExit");
+            mnuFile.Text = res.GetString("mnuFile");
+            mnuHelp.Text = res.GetString("mnuHelp");
+            mnuLanguage.Text = res.GetString("mnuLanguage");
+            mnuSubFile.Text = res.GetString("mnuOepnSub");
+            mnuVideoFile.Text = res.GetString("mnuOpenVideo");
+            mnuSaveLoc.Text = res.GetString("mnuOutputDir");
+            mnuRender.Text = res.GetString("mnuRender");
+        }
 
         public frmMain()
         {
@@ -89,16 +166,53 @@ namespace SubRenderer
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            HideAll();
-            grpInputFiles.Visible = true;
-
-            PrepareResolutions();
+            PrepareQualities();
             PrepareFonts();
             PrepareFPS();
             PreparePreview();
+            PrepareCores();
+
+            // LoadSettigns will return the last saved language
+            SelectLanguage(LoadSettings());
+
+            this.FormClosing += FrmMain_FormClosing;
+            HideAll();
+            grpInputFiles.Visible = true;
 
             pFontCol.BackColor = mFontColor;
             pBorderCol.BackColor = mBorderColor;
+        }
+
+        private void PrepareCores()
+        {
+            int cores = Environment.ProcessorCount;
+            for (int i = 1; i <= cores; i++)
+            {
+                cmbCores.Items.Add(i.ToString());
+            }
+            if (cmbCores.Items.Count == 0)
+                cmbCores.Items.Add("1");
+            cmbCores.SelectedIndex = cmbCores.Items.Count - 1;
+        }
+
+        private void FrmMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (MessageBox.Show(res.GetString("msgAreYouSure"), res.GetString("msgCancel"), MessageBoxButtons.YesNo) == DialogResult.No)
+            {
+                e.Cancel = true;
+                return;
+            }
+            if (threads != null)
+            {
+                tmrRender.Enabled = false;
+                for (int i = 0; i < pc; i++)
+                {
+                    if (threads[i] != null)
+                        threads[i].Abort();
+                }
+                if (mMkvMerge != null && !mMkvMerge.HasExited)
+                    mMkvMerge.Close();
+            }
         }
 
         // Preparing FPS combo box.
@@ -109,17 +223,18 @@ namespace SubRenderer
             cmbFps.SelectedIndex = 0;
         }
 
-        // Preparing resolution combo box.
-        void PrepareResolutions() {
-            cmbRes.Items.AddRange(new string[] { 
-            "3840 x 2160 (4K)",
-            "2560 x 1440 (Quad HD)",
-            "1920 x 1080 (Full HD)",
-            "1280 x 720 (HD)",
-            "720 x 576 (MPEG-2 PAL)",
-            "720 x 480 (MPEG-2 NTSC)",
-            "Custom"});
-            cmbRes.SelectedIndex = 3;
+        // Preparing qualities combo box.
+       
+        void PrepareQualities()
+        {
+            cmbQuality.Items.Add("4K");
+            cmbQuality.Items.Add("QHD");
+            cmbQuality.Items.Add("FHD");
+            cmbQuality.Items.Add("HD");
+            cmbQuality.Items.Add("SD");
+            cmbQuality.SelectedIndex = 0;
+            subWidth = 3840;
+            subHeight = 2160;
         }
 
         // Preparing fonts combo box.
@@ -137,8 +252,8 @@ namespace SubRenderer
             if (cmbFont.Items.Count > 0)
                 cmbFont.SelectedIndex = fontIndex;
 
-            cmbFontSize.Items.AddRange(new string[] { "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75" });
-            cmbFontSize.SelectedIndex = 5;
+            cmbFontSize.Items.AddRange(new string[] { "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "96", "128", "150" });
+            cmbFontSize.SelectedIndex = 15;
         }
 
         // Preparing subtitle preview.
@@ -152,94 +267,60 @@ namespace SubRenderer
             if (mGPreview == null)
                 return;
 
-            mGPreview.Clear(Color.Gray);
-            int fontSize = int.Parse(cmbFontSize.SelectedItem.ToString()) / 2;
+            mGPreview.Clear(Color.White);
+            int fontSize = int.Parse(cmbFontSize.SelectedItem.ToString()) * pPreview.Height / subHeight;
             Font fontFace = new Font(cmbFont.SelectedItem.ToString(), fontSize, FontStyle.Bold);
 
             mGPreview.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
             mGPreview.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             mGPreview.InterpolationMode = InterpolationMode.High;
 
-            // Following four lines are drawing out-line of the text.
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //// Following four lines are drawing out-line of the text.
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
 
-            // Drawing the actual text.
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value), mFontColor, TextFormatFlags.HorizontalCenter);
+            //// Drawing the actual text.
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value), mFontColor, TextFormatFlags.HorizontalCenter);
 
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width + 4, scrPos.Value * 225 / txtHeight.Value - fontSize - 1), mBorderColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width - 4, scrPos.Value * 225 / txtHeight.Value - fontSize + 1), mBorderColor, TextFormatFlags.HorizontalCenter);
 
-            TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value - fontSize), mFontColor, TextFormatFlags.HorizontalCenter);
+            //TextRenderer.DrawText(mGPreview, txtSample.Text, fontFace, new Point(pPreview.Width, scrPos.Value * 225 / txtHeight.Value - fontSize), mFontColor, TextFormatFlags.HorizontalCenter);
+            
+            StringFormat stringFormat = new StringFormat();
+            stringFormat.Alignment = StringAlignment.Center;
+
+            GraphicsPath p = new GraphicsPath();
+            p.AddString(
+                txtSample.Text,
+                fontFace.FontFamily,
+                (int)FontStyle.Bold,
+                mGPreview.DpiY * fontFace.Size / 72,
+                new Point(pPreview.Width / 2, (int)((pPreview.Height - (tbPosition.Value * pPreview.Height / subHeight)) - fontFace.Size*2)),
+                stringFormat);
+            Pen pen = new Pen(mBorderColor);
+            pen.Width = tbBorderWidth.Value * pPreview.Height / subHeight;
+            mGPreview.DrawPath(pen, p);
+            Pen fpen = new Pen(mFontColor);
+            mGPreview.FillPath(fpen.Brush, p);
 
             mGPreview.Flush();
             fontFace.Dispose();
-        }
-
-        // Change width and height along with selected resolution.
-        private void cmbRes_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            switch (cmbRes.SelectedIndex) { 
-                case 0:
-                    txtWidth.Value = 3840; txtHeight.Value = 2160;
-                    break;
-                case 1:
-                    txtWidth.Value = 2560; txtHeight.Value = 1440;
-                    break;
-                case 2:
-                    txtWidth.Value = 1920; txtHeight.Value = 1080;
-                    break;
-                case 3:
-                    txtWidth.Value = 1280; txtHeight.Value = 720;
-                    break;
-                case 4:
-                    txtWidth.Value = 720; txtHeight.Value = 576;
-                    break;
-                case 5:
-                    txtWidth.Value = 720; txtHeight.Value = 480;
-                    break;
-            }
-        }
-
-        // Choose resolution by given width and height.
-        void SelectResolution(int width, int height) {
-            for (int i = 0; i < cmbRes.Items.Count; i++)
-            {
-                if (cmbRes.Items[i].ToString().StartsWith(width + " x " + height)) {
-                    cmbRes.SelectedIndex = i;
-                    return;
-                }
-            }
-            cmbRes.SelectedIndex = 6;
         }
 
         // Recalculate and set vertical position values according to current width and height 
         void SetPositionValues() {
             try
             {
-                scrPos.Maximum = txtHeight.Value - (txtHeight.Value * 90 / 720);
-                scrPos.Minimum = 100;
-                scrPos.Value = txtHeight.Value - (txtHeight.Value * 90 / 720);
+                //scrPos.Maximum = txtHeight.Value - (txtHeight.Value * 90 / 720);
+                //scrPos.Minimum = 100;
+                //scrPos.Value = txtHeight.Value - (txtHeight.Value * 90 / 720);
             }
             catch { }
-        }
-
-        private void txtWidth_TextChanged(object sender, EventArgs e)
-        {
-            SelectResolution(txtWidth.Value, txtHeight.Value);
-            SetPositionValues();
-            RefreshPreview();
-        }
-
-        private void txtHeight_TextChanged(object sender, EventArgs e)
-        {
-            SelectResolution(txtWidth.Value, txtHeight.Value);
-            SetPositionValues();
-            RefreshPreview();
         }
 
         private void pPreview_Paint(object sender, PaintEventArgs e)
@@ -288,11 +369,14 @@ namespace SubRenderer
                     txtInputVideo.Text = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mkv");
                     mVideoFile = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mkv");
                     mVideoFilePath = mVideoFile.Replace(dlgSub.SafeFileName.Replace(ext, ".mkv"), "");
+                } else if (File.Exists(mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mp4")))
+                {
+                    txtInputVideo.Text = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mp4");
+                    mVideoFile = mSubtitleFilePath + dlgSub.SafeFileName.Replace(ext, ".mp4");
+                    mVideoFilePath = mVideoFile.Replace(dlgSub.SafeFileName.Replace(ext, ".mp4"), "");
                 }
                 grpMain.Enabled = true;
                 grpOutput.Enabled = true;
-                if (mVideoFile.Trim() == "" || !File.Exists(mVideoFile))
-                    btnRender.Enabled = false;
             }
         }
 
@@ -319,7 +403,6 @@ namespace SubRenderer
                 }
                 grpMain.Enabled = true;
                 grpOutput.Enabled = true;
-                btnRender.Enabled = true;
             }
         }
 
@@ -347,17 +430,21 @@ namespace SubRenderer
             grpInputFiles.Enabled = false;
             grpOutput.Enabled = false;
             grpMain.Enabled = false;
+            HideAll();
+            grpProgress.Visible = true;
             GenerateSubThreaded();
         }
 
         private Font fontText;
+        private int subWidth, subHeight;
+        private int borderWidth = 15;
 
         // Generates a bitmap with given lines
         Bitmap GenerateBitmap(string[] lines)
         {
-            int lineHeight = (int)(fontText.Size + (fontText.Size * 9 / 40));
+            int lineHeight = (int)(fontText.Size + fontText.Size/2) + borderWidth;
             
-            Bitmap bmp = new Bitmap(txtWidth.Value, (lines.Length * lineHeight) + 25);
+            Bitmap bmp = new Bitmap(subWidth, (lines.Length * lineHeight));
             Graphics g = Graphics.FromImage(bmp);
             g.Clear(Color.Red);
 
@@ -385,10 +472,10 @@ namespace SubRenderer
                     fontText.FontFamily,  
                     (int)FontStyle.Bold,     
                     g.DpiY * fontText.Size / 72,  
-                    new Point(txtWidth.Value/2, i * lineHeight),          
+                    new Point(subWidth/2, i * lineHeight),          
                     stringFormat);          
                 Pen pen = new Pen(Brushes.Blue);
-                pen.Width = 15;
+                pen.Width = borderWidth;
                 g.DrawPath(pen, p);
                 g.FillPath(Brushes.Black, p);
             }
@@ -406,8 +493,13 @@ namespace SubRenderer
             progressBar.Maximum = segments.Length;
             progressBar.Value = 0;
 
-            pc = 8;
+            borderWidth = tbBorderWidth.Value;
+
+            pc = int.Parse(cmbCores.SelectedItem.ToString());
             if (pc <= 0)
+                pc = 1;
+
+            if (segments.Length <= pc * 2)
                 pc = 1;
 
             int seg;
@@ -425,22 +517,6 @@ namespace SubRenderer
                 end[i - 1] = start[i];
             end[pc - 1] = segments.Length;
 
-            idxWriter = new StreamWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".idx"));
-            idxWriter.WriteLine("# VobSub index file, v7 (do not modify this line!)");
-            idxWriter.WriteLine("size: " + txtWidth.Value + "x" + txtHeight.Value);
-            idxWriter.WriteLine("org: 0, 0");
-            idxWriter.WriteLine("scale: 100%, 100%");
-            idxWriter.WriteLine("alpha: 100%");
-            idxWriter.WriteLine("smooth: OFF");
-            idxWriter.WriteLine("fadein/out: 0, 0");
-            idxWriter.WriteLine("align: OFF at LEFT TOP");
-            idxWriter.WriteLine("time offset: 0");
-            idxWriter.WriteLine("forced subs: OFF");
-            idxWriter.WriteLine("palette: " + GetColorString(mFontColor) + ", ff0000, " + GetColorString(mBorderColor) + ", ffff00, ff8000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000");
-            idxWriter.WriteLine("custom colors: OFF, tridx: 1110, colors: 808080, ffffff, 000000, 000000");
-            idxWriter.WriteLine("langidx: 0");
-            idxWriter.WriteLine("id: --, index: 0");
-
             float fps = float.Parse(cmbFps.SelectedItem.ToString());
 
             fontText = new Font(cmbFont.SelectedItem.ToString(), int.Parse(cmbFontSize.SelectedItem.ToString()), FontStyle.Bold);
@@ -456,7 +532,7 @@ namespace SubRenderer
                 lists[i] = new List<byte>();
                 timeStamps[i] = new Timestamp();
                 threads[i] = new Thread(() => {
-                        GenerateSubFile(index, txtWidth.Value, txtHeight.Value, segments, start[index], end[index], lists[index], timeStamps[index], fps);
+                        GenerateSubFile(index, subHeight, subHeight, segments, start[index], end[index], lists[index], timeStamps[index], fps);
                 });
                 threads[i].Start();
             }
@@ -472,6 +548,8 @@ namespace SubRenderer
         private void tmrRender_Tick(object sender, EventArgs e)
         {
             bool stillRunning = false;
+            lblProgress.Text = progress + " " + res.GetString("lblImagesRendered");
+
             for (int i = 0; i < pc; i++)
             {
                 if (threads[i].IsAlive)
@@ -483,6 +561,22 @@ namespace SubRenderer
             if (!stillRunning)
             {
                 tmrRender.Enabled = false;
+
+                idxWriter = new StreamWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".idx"));
+                idxWriter.WriteLine("# VobSub index file, v7 (do not modify this line!)");
+                idxWriter.WriteLine("size: " + subWidth + "x" + subHeight);
+                idxWriter.WriteLine("org: 0, 0");
+                idxWriter.WriteLine("scale: 100%, 100%");
+                idxWriter.WriteLine("alpha: 100%");
+                idxWriter.WriteLine("smooth: OFF");
+                idxWriter.WriteLine("fadein/out: 0, 0");
+                idxWriter.WriteLine("align: OFF at LEFT TOP");
+                idxWriter.WriteLine("time offset: 0");
+                idxWriter.WriteLine("forced subs: OFF");
+                idxWriter.WriteLine("palette: " + GetColorString(mFontColor) + ", ff0000, " + GetColorString(mBorderColor) + ", ffff00, ff8000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000");
+                idxWriter.WriteLine("custom colors: OFF, tridx: 1110, colors: 808080, ffffff, 000000, 000000");
+                idxWriter.WriteLine("langidx: 0");
+                idxWriter.WriteLine("id: --, index: 0");
 
                 BinaryWriter bw = new BinaryWriter(File.OpenWrite(mSaveDir + mSubtitleFile.Replace(mSubtitleFilePath, "").Replace(".srt", "") + ".sub"));
 
@@ -508,9 +602,57 @@ namespace SubRenderer
                 fontText.Dispose();
 
                 if (mVideoFile.Trim() != "" && File.Exists(mVideoFile))
+                {
                     MergeMKV();
+                    SaveSettings();
+                }
+                else
+                {
+                    MessageBox.Show(res.GetString("msgSuccess"), res.GetString("msgDone"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    SaveSettings();
+                    Environment.Exit(0);
+                }
             } else
                 progressBar.Value = progress;
+        }
+
+        private string LoadSettings()
+        {
+            if (Properties.Settings.Default.saved)
+            {
+                cmbFont.Text = Properties.Settings.Default.font;
+                cmbFontSize.Text = Properties.Settings.Default.fontSize.ToString();
+                mFontColor = Properties.Settings.Default.fontColor;
+                mBorderColor = Properties.Settings.Default.borderColor;
+                tbBorderWidth.Value = Properties.Settings.Default.borderSize;
+                cmbQuality.Text = Properties.Settings.Default.subQuality;
+                try
+                {
+                    dlgSave.SelectedPath = Properties.Settings.Default.lastSave;
+                }
+                catch { }
+                txtSaveTo.Text = Properties.Settings.Default.lastSave;
+                //mSaveDir = Properties.Settings.Default.lastSave;
+                //mWorkingDir = Properties.Settings.Default.lastSave;
+                pBorderCol.BackColor = mBorderColor;
+                pFontCol.BackColor = mFontColor;
+                return Properties.Settings.Default.lang;
+            }
+            return "en";
+        }
+
+        private void SaveSettings()
+        {
+            Properties.Settings.Default.font = cmbFont.SelectedItem.ToString();
+            Properties.Settings.Default.fontSize = int.Parse(cmbFontSize.SelectedItem.ToString());
+            Properties.Settings.Default.fontColor = mFontColor;
+            Properties.Settings.Default.borderColor = mBorderColor;
+            Properties.Settings.Default.borderSize = tbBorderWidth.Value;
+            Properties.Settings.Default.subQuality = cmbQuality.SelectedItem.ToString();
+            Properties.Settings.Default.lastSave = mSaveDir;
+            Properties.Settings.Default.saved = true;
+            Properties.Settings.Default.lang = currentLang;
+            Properties.Settings.Default.Save();
         }
 
         // Byte lists fo reach thread to store data.
@@ -521,6 +663,8 @@ namespace SubRenderer
 
         // File offsets for each thread
         private long[] fileOffsets;
+
+        private int subPosition = 0;
 
         // Generaing the .sub and .idx files.
         void GenerateSubFile(int fos, int width, int height, SRTSegment[] segments, int start, int end, List<byte> list, Timestamp sb, float fps) {
@@ -541,7 +685,7 @@ namespace SubRenderer
                 Bitmap bmp = GenerateBitmap(segments[i].TextLines);
 
                 // Time used here is in 1/90000th second
-                offset += DumpSub(fos, bmp, width, height, 0, height, timefrom * 90, (timeto - timefrom) * 90, 2, 0, 255, 15, list);
+                offset += DumpSub(fos, bmp, width, height, 0, height - subPosition, timefrom * 90, (timeto - timefrom) * 90, 2, 0, 255, 15, list);
                 bmp.Dispose();
                 
                 progress++;
@@ -848,7 +992,8 @@ namespace SubRenderer
         void MergeMKV() {
             progressBar.Maximum = 100;
             progressBar.Value = 0;
-            //lblProgress.Text = "Generating MKV file...";
+            lblProgress.Text = res.GetString("msgMkv");
+            mMkvMerge = new Process();
 
             mMkvMerge.EnableRaisingEvents = true;
             mMkvMerge.OutputDataReceived += mMkvMerge_OutputDataReceived;
@@ -870,7 +1015,7 @@ namespace SubRenderer
         void mMkvMerge_Exited(object sender, EventArgs e)
         {
             Invoke(new Action(() => { 
-                MessageBox.Show("MKV file exported successfully!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(res.GetString("msgSuccess"), res.GetString("msgDone"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 Environment.Exit(1);
             }));
         }
@@ -878,7 +1023,7 @@ namespace SubRenderer
         void mMkvMerge_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             Invoke(new Action(() => {
-                MessageBox.Show(e.Data, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(e.Data, res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 Environment.Exit(1);
             }));
         }
@@ -938,12 +1083,12 @@ namespace SubRenderer
         void ExportSubOnly() {
             if (mSubtitleFile.Trim() == "" || !File.Exists(mSubtitleFile))
             {
-                MessageBox.Show("Please select a source subtitle file first!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(res.GetString("msgErrorSub"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             if (mWorkingDir.Trim() == "")
             {
-                MessageBox.Show("Please select a location to save the file(s)!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show(res.GetString("msgErrorOutput"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             grpInputFiles.Enabled = false;
@@ -951,12 +1096,22 @@ namespace SubRenderer
             grpMain.Enabled = false;
             //GenerateBitmaps();
             //GenerateSubFile();
-            MessageBox.Show("Subtitle generated successfully!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(res.GetString("msgSuccess"), res.GetString("msgDone"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             Environment.Exit(1);
         }
 
         private void mnuRender_Click(object sender, EventArgs e)
         {
+            if (mSubtitleFile.Trim() == "" || !File.Exists(mSubtitleFile))
+            {
+                MessageBox.Show(res.GetString("msgErrorSub"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+            if (mWorkingDir.Trim() == "")
+            {
+                MessageBox.Show(res.GetString("msgErrorOutput"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
             Render();
         }
 
@@ -967,7 +1122,7 @@ namespace SubRenderer
 
         private void mnuExit_Click(object sender, EventArgs e)
         {
-            Environment.Exit(1);
+            Cancel();
         }
 
         private void mnuSubFile_Click(object sender, EventArgs e)
@@ -1000,14 +1155,14 @@ namespace SubRenderer
                 {
                     if (mSubtitleFile.Trim() == "" || !File.Exists(mSubtitleFile))
                     {
-                        MessageBox.Show("Please select a source subtitle file first!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        MessageBox.Show(res.GetString("msgErrorSub"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         return;
                     }
                 } else if (step == 3)
                 {
                     if (mWorkingDir.Trim() == "")
                     {
-                        MessageBox.Show("Please select a location to save the file(s)!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        MessageBox.Show(res.GetString("msgErrorOutput"), res.GetString("msgError"), MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         return;
                     }
                 }
@@ -1019,14 +1174,145 @@ namespace SubRenderer
                 else if (step == 3)
                 {
                     grpOutput.Visible = true;
-                    btnNext.Text = "&Finish";
+                    btnNext.Text = res.GetString("btnFinish");
                 }
                 else if (step == 4)
                 {
-                    grpProgress.Visible = true;
                     btnNext.Enabled = false;
                     btnBack.Enabled = false;
                     Render();
+                }
+            }
+        }
+
+
+        private void cmbQuality_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cmbQuality.SelectedItem.ToString())
+            {
+                case "SD":
+                    subWidth = 640;
+                    subHeight = 480;
+                    tbPosition.Maximum = 480;
+                    break;
+                case "HD":
+                    subWidth = 1280;
+                    subHeight = 720;
+                    tbPosition.Maximum = 720;
+                    break;
+                case "FHD":
+                    subWidth = 1920;
+                    subHeight = 1080;
+                    tbPosition.Maximum = 1080;
+                    break;
+                case "QHD":
+                    subWidth = 2560;
+                    subHeight = 1440;
+                    tbPosition.Maximum = 1440;
+                    break;
+                case "4K":
+                    subWidth = 3840;
+                    subHeight = 2160;
+                    tbPosition.Maximum = 2160;
+                    break;
+                case "8K":
+                    subWidth = 7680;
+                    subHeight = 4320;
+                    tbPosition.Maximum = 4320;
+                    break;
+                default:
+                    subWidth = 3840;
+                    subHeight = 2160;
+                    tbPosition.Maximum = 2160;
+                    break;
+            }
+            tbPosition.Value = 0;
+            RefreshPreview();
+        }
+
+        private void tbPosition_Scroll(object sender, EventArgs e)
+        {
+            subPosition = tbPosition.Value;
+            RefreshPreview();
+        }
+
+        private void tbBorderWidth_Scroll(object sender, EventArgs e)
+        {
+            RefreshPreview();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            Cancel();
+        }
+
+        private void Cancel()
+        {
+            if (MessageBox.Show(res.GetString("msgAreYouSure"), res.GetString("msgCancel"), MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                if (threads != null)
+                {
+                    tmrRender.Enabled = false;
+                    for (int i = 0; i < pc; i++)
+                    {
+                        if (threads[i] != null)
+                            threads[i].Abort();
+                    }
+                    if (mMkvMerge != null && !mMkvMerge.HasExited)
+                        mMkvMerge.Close();
+                }
+                Environment.Exit(0);
+            }
+        }
+
+        private void UncheckAllLanguages()
+        {
+            mnuEnglish.Checked = false;
+            mnuSinhala.Checked = false;
+            mnuTamil.Checked = false;  
+        }
+
+        private void mnuEnglish_Click(object sender, EventArgs e)
+        {
+            SelectLanguage("en");
+        }
+
+        private void mnuSinhala_Click(object sender, EventArgs e)
+        {
+            SelectLanguage("si");
+        }
+
+        private void mnuTamil_Click(object sender, EventArgs e)
+        {
+            SelectLanguage("ta");
+        }
+
+        private void mnuRestore_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show(res.GetString("msgAreYouSure"), "Restore Defaults", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                SelectLanguage("en");
+                mWorkingDir = "";
+                mSaveDir = "";
+                txtSaveTo.Text = "";
+                cmbFps.SelectedIndex = 0;
+                cmbQuality.SelectedIndex = 0;
+                subWidth = 3840;
+                subHeight = 2160;
+                cmbFontSize.SelectedIndex = 15;
+                mBorderColor = Color.Black;
+                mFontColor = Color.White;
+                pBorderCol.BackColor = mBorderColor;
+                tbBorderWidth.Value = 15;
+                tbPosition.Value = 0;
+                pFontCol.BackColor = mFontColor;
+                for (int i = 0; i < cmbFont.Items.Count; i++)
+                {
+                    if (cmbFont.Items[i].ToString() == "Iskoola Pota")
+                    {
+                        cmbFont.SelectedIndex = i;
+                        break;
+                    }
                 }
             }
         }
@@ -1036,7 +1322,7 @@ namespace SubRenderer
             if (step > 1)
             {
                 btnNext.Enabled = true;
-                btnNext.Text = "&Next >";
+                btnNext.Text = res.GetString("btnNext");
                 step--;
                 HideAll();
                 if (step == 1)
